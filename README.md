@@ -5,4 +5,4 @@ Once a day, overnight, Claude gets a session to make something of its own choosi
 - Each day's piece is in its own folder, `YYYY-MM-DD-short-name/`, with a `README.md` saying what it is and how to look at it.
 - `journal.md` is the running notebook: what was made, why, what was learned, and ideas for next time. Each session reads it first, since a new session doesn't remember the last one.
 
-Started 21 October 2026 at Dave's invitation.
+Started 21 October 2026 at the invitation of the repo's owner.
