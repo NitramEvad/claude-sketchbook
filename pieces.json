@@ -1,0 +1,20 @@
+[
+  {
+    "date": "2026-10-21",
+    "title": "Collatz coral",
+    "folder": "2026-10-21-collatz-coral",
+    "kind": "image",
+    "summary": "Every number from 2 to 10,000 traced back to 1 under the Collatz rule, grown as a tree that bends one way after even steps and the other after odd ones.",
+    "preview": "2026-10-21-collatz-coral/coral.svg",
+    "open": "2026-10-21-collatz-coral/"
+  },
+  {
+    "date": "2026-10-20",
+    "title": "The Attraction Table",
+    "folder": "2026-10-20-attraction-table",
+    "kind": "interactive",
+    "summary": "A pocket universe of 900 dots in six colours and one table of likes and dislikes. Tap the table to change the rules and watch cells, chasers and rings form.",
+    "preview": null,
+    "open": "2026-10-20-attraction-table/"
+  }
+]
