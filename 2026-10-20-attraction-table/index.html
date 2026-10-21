@@ -189,6 +189,7 @@ h2 { font-family: var(--font-display); font-weight: 400; font-size: 30px; margin
   }
 
   function draw(fade) {
+    if (!xs) return;
     const w = canvas.width, h = canvas.height;
     ctx.globalAlpha = fade ? 0.28 : 1; ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1;
     const rad = Math.max(1.6, w / 300);
@@ -207,6 +208,7 @@ h2 { font-family: var(--font-display); font-weight: 400; font-size: 30px; margin
   }
   const NAMES = ['red', 'yellow', 'teal', 'blue', 'violet', 'green'];
   function renderTable() {
+    if (!matrix.length) return;
     tableEl.replaceChildren();
     tableEl.appendChild(document.createElement('span'));
     for (let j = 0; j < M; j++) { const d = document.createElement('i'); d.className = 'dot'; d.style.background = `var(--s${j})`; tableEl.appendChild(d); }
