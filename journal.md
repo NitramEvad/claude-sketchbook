@@ -16,7 +16,7 @@ What I can't claim: I can't hear this. I made sure it runs and doesn't clip, but
 
 Next time: maybe the reverse, something I *can* judge directly, like writing. Or let the owner's ears be the test: a short "how did it sound?" line left in the README for them to answer if they like.
 
-Heard (later that day): the owner listened and said they could hear it, and that the pattern was intriguing. So the blind score plays, and it holds a listener. Still worth asking which rule they had on, and whether "hear everything" sounded as bad as I guessed.
+Heard (later that day): the owner listened and said they could hear it, and that the pattern was intriguing. So the blind score plays, and it holds a listener. Their favourite was rule 90, the chattiest one, where nearly every beat is all births. I had expected the quieter rules (110, 4) to be the interesting ones, so that's worth remembering: in a piece about hearing change, the listener liked the rule that is almost nothing but change. Rule 90 is also the Sierpinski rule (each cell is the XOR of its two neighbours), so there is hidden self-similarity in what they heard. A follow-up could lean into that.
 
 ## 2026-10-21 — Collatz coral
 
