@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Only the changes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0f1115; --ink:#d9d4c7; --dim:#6b6a66; --alive:#3a3f4a; --born:#f2b25c; --line:#262a32; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 "IBM Plex Mono", ui-monospace, monospace; }
+  main { max-width:760px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-weight:600; font-size:20px; margin:0 0 4px; letter-spacing:.02em; }
+  p { margin:6px 0 14px; color:#b9b4a8; }
+  .controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0; }
+  button, input, select { font:inherit; color:var(--ink); background:#1a1d24; border:1px solid var(--line); border-radius:4px; padding:6px 10px; }
+  button { cursor:pointer; }
+  button:hover { border-color:#4a505c; }
+  button.on { border-color:var(--born); color:var(--born); }
+  #play { min-width:84px; }
+  input[type=number] { width:76px; }
+  input[type=range] { padding:0; }
+  label { color:var(--dim); display:flex; gap:6px; align-items:center; }
+  .presets button { padding:4px 8px; font-size:13px; }
+  canvas { width:100%; display:block; background:#0b0c10; border:1px solid var(--line); border-radius:4px; image-rendering:pixelated; }
+  #note { min-height:3em; color:#b9b4a8; margin-top:10px; }
+  .key { color:var(--dim); font-size:12px; margin-top:6px; }
+  .key b { color:var(--born); font-weight:400; }
+  .key i { color:#7d8494; font-style:normal; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Only the changes</h1>
+  <p>A row of cells, one rule, one row per beat. A cell sounds only on the beat it is born. Whatever stays the same is silent.</p>
+
+  <div class="controls">
+    <button id="play">▶ play</button>
+    <label>rule <input id="rule" type="number" min="0" max="255" value="110"></label>
+    <button id="seed1">one cell</button>
+    <button id="seedR">random</button>
+    <button id="all" title="hear every live cell, not just the new ones">hear everything</button>
+    <label>tempo <input id="tempo" type="range" min="60" max="400" value="200"></label>
+  </div>
+  <div class="controls presets" id="presets"></div>
+
+  <canvas id="c" width="580" height="420"></canvas>
+  <div class="key"><b>■</b> born this beat (sounds) &nbsp; <i>■</i> still alive (silent)</div>
+  <div id="note"></div>
+</main>
+<script>
+const W = 29;                 // cells; each one is a note
+const ROWS = 60;              // rows kept on screen
+const CELL = 20;
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+canvas.width = W * CELL; canvas.height = ROWS * 6;
+const RH = canvas.height / ROWS;
+
+// D major pentatonic upward from D2. Cell 0 is the lowest note.
+const STEPS = [0, 2, 4, 7, 9];
+const freq = i => 73.42 * Math.pow(2, (12 * Math.floor(i / 5) + STEPS[i % 5]) / 12);
+
+const PRESETS = {
+  110: "Rule 110 is the famous one: it can compute anything. Listen for the gliders, little phrases that walk across the keyboard through a silent background.",
+  30: "Rule 30 is chaos. Wolfram used its centre column as a random number generator. It never settles, so it never goes quiet.",
+  90: "Rule 90 draws Sierpiński's triangle. Every cell is the XOR of its neighbours, so almost every live cell is new and almost everything sounds.",
+  184: "Rule 184 is traffic: a car moves right if the space ahead is free, and a car arriving counts as a birth. One car is a scale that climbs and wraps round. From random, the jams shuffle until the whole road settles into one repeating phrase.",
+  54: "Rule 54 is another rule with gliders, more regular than 110: things that sound like a rhythm section.",
+  4: "Rule 4 keeps a cell only if both neighbours are empty. From random it freezes after one beat, and then there is nothing more to hear.",
+  73: "Rule 73 builds walls. Between them, small rooms that flicker forever.",
+  150: "Rule 150 is the three-way XOR, a busier cousin of 90.",
+  45: "Rule 45: chaotic, and leans one way.",
+};
+const presetsEl = document.getElementById('presets');
+for (const r of Object.keys(PRESETS).map(Number)) {
+  const b = document.createElement('button');
+  b.textContent = r;
+  b.onclick = () => { setRule(r); };
+  presetsEl.appendChild(b);
+}
+
+let rule = 110, row = [], prev = [], history = [], hearAll = false;
+let seedMode = 'one';
+
+function seed(mode) {
+  seedMode = mode;
+  row = new Array(W).fill(0);
+  if (mode === 'one') row[rule === 110 ? W - 2 : Math.floor(W / 2)] = 1;  // 110 grows leftwards
+  else for (let i = 0; i < W; i++) row[i] = Math.random() < 0.5 ? 1 : 0;
+  prev = new Array(W).fill(0);
+  history = [];
+  push(row, prev);
+}
+function step() {
+  const next = new Array(W);
+  for (let i = 0; i < W; i++) {
+    const l = row[(i - 1 + W) % W], c = row[i], r = row[(i + 1) % W];
+    next[i] = (rule >> (l * 4 + c * 2 + r)) & 1;
+  }
+  prev = row; row = next;
+  push(row, prev);
+}
+function push(r, p) {
+  history.push(r.map((v, i) => v ? (p[i] ? 1 : 2) : 0)); // 1 alive, 2 born
+  if (history.length > ROWS) history.shift();
+  draw();
+}
+function draw() {
+  ctx.fillStyle = '#0b0c10'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const off = ROWS - history.length;
+  history.forEach((h, y) => {
+    const fade = 0.35 + 0.65 * (y + 1) / history.length;
+    for (let x = 0; x < W; x++) {
+      if (!h[x]) continue;
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = h[x] === 2 ? '#f2b25c' : '#3a3f4a';
+      ctx.fillRect(x * CELL + 1, (y + off) * RH + 0.5, CELL - 2, RH - 1);
+    }
+  });
+  ctx.globalAlpha = 1;
+}
+
+// --- sound ---
+let ac = null, master, delay, fb, wet;
+function audio() {
+  if (ac) return;
+  ac = new (window.AudioContext || window.webkitAudioContext)();
+  master = ac.createGain(); master.gain.value = 0.5;
+  const comp = ac.createDynamicsCompressor();
+  delay = ac.createDelay(1); delay.delayTime.value = 0.37;
+  fb = ac.createGain(); fb.gain.value = 0.32;
+  wet = ac.createGain(); wet.gain.value = 0.28;
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
+  master.connect(comp); comp.connect(ac.destination);
+  master.connect(delay); delay.connect(lp); lp.connect(fb); fb.connect(delay); lp.connect(wet); wet.connect(comp);
+}
+function pluck(i, t, amp) {
+  const f = freq(i);
+  const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+  o.type = 'triangle'; o.frequency.value = f;
+  o2.type = 'sine'; o2.frequency.value = f * 2.001;
+  const tilt = Math.pow(220 / Math.max(f, 220), 0.55); // keep the top end gentle
+  const a = amp * tilt;
+  const dur = 0.25 + 1.6 * (1 - i / W);                 // low notes ring longer
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(a, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  const g2 = ac.createGain(); g2.gain.value = 0.18;
+  o.connect(g); o2.connect(g2); g2.connect(g); g.connect(master);
+  o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+}
+function sound() {
+  const t = ac.currentTime + 0.02;
+  const idx = [];
+  for (let i = 0; i < W; i++) if (row[i] && (hearAll || !prev[i])) idx.push(i);
+  if (!idx.length) return;
+  const amp = 0.32 / Math.sqrt(idx.length);
+  // a tiny strum, low to high, so chords don't land as one thud
+  idx.forEach((i, k) => pluck(i, t + k * 0.008, amp));
+}
+
+let timer = null;
+function tick() {
+  step();
+  sound();
+  timer = setTimeout(tick, 60000 / document.getElementById('tempo').value);
+}
+const playBtn = document.getElementById('play');
+playBtn.onclick = () => {
+  audio();
+  if (ac.state === 'suspended') ac.resume();
+  if (timer) { clearTimeout(timer); timer = null; playBtn.textContent = '▶ play'; playBtn.classList.remove('on'); }
+  else { playBtn.textContent = '■ stop'; playBtn.classList.add('on'); tick(); }
+};
+function setRule(r) {
+  rule = Math.max(0, Math.min(255, r | 0));
+  document.getElementById('rule').value = rule;
+  document.getElementById('note').textContent = PRESETS[rule] || `Rule ${rule}. ${rule.toString(2).padStart(8, '0')} in binary: the eight answers to the eight possible neighbourhoods.`;
+  seed(rule === 184 ? 'random' : seedMode);
+}
+document.getElementById('rule').onchange = e => setRule(+e.target.value);
+document.getElementById('seed1').onclick = () => seed('one');
+document.getElementById('seedR').onclick = () => seed('random');
+const allBtn = document.getElementById('all');
+allBtn.onclick = () => { hearAll = !hearAll; allBtn.classList.toggle('on', hearAll); };
+document.addEventListener('keydown', e => { if (e.code === 'Space' && e.target.tagName !== 'INPUT') { e.preventDefault(); playBtn.click(); } });
+
+setRule(110);
+for (let k = 0; k < ROWS - 1; k++) step();   // something to look at before you press play
+</script>
+</body>
+</html>

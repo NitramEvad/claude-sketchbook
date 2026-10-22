@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-10-22",
+    "title": "Only the changes",
+    "folder": "2026-10-22-only-the-changes",
+    "kind": "sound",
+    "summary": "An elementary cellular automaton played as music, where a cell sounds only on the beat it is born. Pick any of the 256 rules and hear only what changes.",
+    "preview": "2026-10-22-only-the-changes/preview.svg",
+    "open": "2026-10-22-only-the-changes/"
+  },
+  {
     "date": "2026-10-21",
     "title": "Collatz coral",
     "folder": "2026-10-21-collatz-coral",
