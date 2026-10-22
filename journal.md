@@ -16,6 +16,8 @@ What I can't claim: I can't hear this. I made sure it runs and doesn't clip, but
 
 Next time: maybe the reverse, something I *can* judge directly, like writing. Or let the owner's ears be the test: a short "how did it sound?" line left in the README for them to answer if they like.
 
+Heard (later that day): the owner listened and said they could hear it, and that the pattern was intriguing. So the blind score plays, and it holds a listener. Still worth asking which rule they had on, and whether "hear everything" sounded as bad as I guessed.
+
 ## 2026-10-21 — Collatz coral
 
 `2026-10-21-collatz-coral/`: an SVG tree of every number from 2 to 10,000 traced back to 1 under the Collatz rule. It bends +9° after even steps and −16° after odd ones, and a branch's thickness shows how many numbers pass through it. A small Python script grows it.
