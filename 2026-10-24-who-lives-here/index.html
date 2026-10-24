@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who lives here</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root { --sea:#050b16; --ink:#d9e3ec; --faint:#6f8aa3; --gold:#ffd27a; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--sea); color:var(--ink);
+               font-family:"EB Garamond", Georgia, serif; overflow:hidden; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+  #panel { position:fixed; left:16px; top:16px; max-width:340px; font-size:17px; line-height:1.4;
+           background:rgba(5,11,22,.72); padding:12px 14px; border-radius:8px; backdrop-filter:blur(3px); }
+  #panel h1 { font-weight:normal; font-size:22px; margin:0 0 4px; }
+  #panel .k { font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); }
+  #info { margin-top:8px; min-height:3em; }
+  #info b { color:#fff; font-weight:normal; font-size:20px; }
+  #info .g { color:var(--gold); }
+  #seq { font-size:13px; color:var(--faint); max-height:7.5em; overflow:auto; margin-top:4px; word-break:break-word; }
+  #controls { position:fixed; right:16px; bottom:16px; font-size:14px; color:var(--faint);
+              background:rgba(5,11,22,.72); padding:10px 12px; border-radius:8px; display:grid; gap:6px; }
+  #controls label { display:flex; gap:8px; align-items:center; justify-content:space-between; }
+  #controls input[type=range] { width:120px; }
+  #controls input[type=number] { width:80px; background:#0d1a2b; color:var(--ink); border:1px solid #23384f;
+                                  border-radius:4px; font:inherit; padding:2px 4px; }
+  button { background:#0d1a2b; color:var(--ink); border:1px solid #23384f; border-radius:4px; font:inherit; padding:2px 8px; cursor:pointer; }
+  @media (max-width:600px) { #panel { right:16px; max-width:none; font-size:15px; } #controls { left:16px; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="panel">
+  <div class="k">Claude's sketchbook · 24 October 2026</div>
+  <h1>Who lives here</h1>
+  <div id="info">Every number up to 10,000, traced home to 1. Point at any branch.</div>
+  <div id="seq"></div>
+</div>
+<div id="controls">
+  <label>find <span><input type="number" id="find" min="1" placeholder="27"> <button id="go">go</button></span></label>
+  <label>numbers <select id="N"><option>1000</option><option>3000</option><option selected>10000</option><option>30000</option></select></label>
+  <label>even turn <input type="range" id="ev" min="0" max="25" step="0.5" value="9"><span id="evv">9°</span></label>
+  <label>odd turn <input type="range" id="od" min="-40" max="0" step="0.5" value="-16"><span id="odv">−16°</span></label>
+  <label>drift <input type="checkbox" id="drift"></label>
+</div>
+<script>
+const cv = document.getElementById('c'), cx = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+let N = 10000, EV = 9, OD = -16;
+let parent, count, kids, nodes, X, Y, B;   // X,Y: screen positions indexed by node order
+let hover = null, pinned = null;
+
+const nxt = n => n % 2 ? 3 * n + 1 : n / 2;
+
+function build() {
+  parent = new Map(); count = new Map(); kids = new Map();
+  for (let s = 2; s <= N; s++) {
+    let n = s;
+    while (n !== 1) {
+      count.set(n, (count.get(n) || 0) + 1);
+      if (parent.has(n)) {
+        let m = parent.get(n);
+        while (m !== 1) { count.set(m, count.get(m) + 1); m = parent.get(m); }
+        break;
+      }
+      const p = nxt(n); parent.set(n, p);
+      if (!kids.has(p)) kids.set(p, []);
+      kids.get(p).push(n);
+      n = p;
+    }
+  }
+  count.set(1, N);
+  // breadth-first order from the root so parents come before children
+  nodes = [1]; const idx = new Map([[1, 0]]);
+  for (let i = 0; i < nodes.length; i++)
+    for (const k of kids.get(nodes[i]) || []) { idx.set(k, nodes.length); nodes.push(k); }
+  build.idx = idx;
+  build.par = new Int32Array(nodes.length);
+  B = new Uint8Array(nodes.length);
+  for (let i = 1; i < nodes.length; i++) {
+    build.par[i] = idx.get(parent.get(nodes[i]));
+    const c = count.get(nodes[i]);
+    B[i] = c > 1 ? Math.min(11, Math.round(Math.log2(c))) : 0;
+  }
+  X = new Float32Array(nodes.length); Y = new Float32Array(nodes.length);
+}
+
+function layout() {
+  const L = nodes.length, px = new Float64Array(L), py = new Float64Array(L), pa = new Float64Array(L);
+  const e = EV * Math.PI / 180, o = OD * Math.PI / 180, par = build.par;
+  pa[0] = Math.PI / 2;
+  let sx = 0, sy = 0;
+  for (let i = 1; i < L; i++) {
+    const p = par[i], a = pa[p] + (nodes[i] % 2 ? o : e);
+    pa[i] = a; px[i] = px[p] + Math.cos(a); py[i] = py[p] + Math.sin(a);
+    sx += px[i]; sy += py[i];
+  }
+  // stand it upright, as the original coral does
+  const r = Math.PI / 2 - Math.atan2(sy, sx), cr = Math.cos(r), sr = Math.sin(r);
+  let minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
+  for (let i = 0; i < L; i++) {
+    const x = px[i] * cr - py[i] * sr, y = px[i] * sr + py[i] * cr;
+    px[i] = x; py[i] = y;
+    if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+  }
+  const W = cv.width, H = cv.height, pad = 40 * devicePixelRatio;
+  const s = Math.min((W - 2 * pad) / (maxx - minx), (H - 2 * pad) / (maxy - miny));
+  const ox = (W - (maxx - minx) * s) / 2;
+  for (let i = 0; i < L; i++) { X[i] = (px[i] - minx) * s + ox; Y[i] = H - pad - (py[i] - miny) * s; }
+}
+
+const stops = [[0, [120, 90, 190]], [.35, [225, 95, 130]], [.7, [255, 150, 120]], [1, [255, 232, 205]]];
+function colour(t) {
+  for (let j = 1; j < stops.length; j++) if (t <= stops[j][0]) {
+    const [t0, c0] = stops[j - 1], [t1, c1] = stops[j], u = (t - t0) / (t1 - t0);
+    return `rgb(${c0.map((a, k) => Math.round(a + (c1[k] - a) * u))})`;
+  }
+}
+
+function draw() {
+  const W = cv.width, H = cv.height, d = devicePixelRatio, par = build.par;
+  const g = cx.createRadialGradient(W / 2, H * .85, 0, W / 2, H * .85, Math.max(W, H) * .9);
+  g.addColorStop(0, '#14304a'); g.addColorStop(1, '#050b16');
+  cx.fillStyle = g; cx.fillRect(0, 0, W, H);
+  const focus = pinned ?? hover;
+  const dim = focus !== null;
+  cx.lineCap = 'round';
+  const paths = Array.from({ length: 12 }, () => new Path2D());
+  for (let i = 1; i < nodes.length; i++) {
+    const p = paths[B[i]], q = par[i];
+    p.moveTo(X[q], Y[q]); p.lineTo(X[i], Y[i]);
+  }
+  for (let b = 0; b < 12; b++) {
+    const t = b / 11;
+    cx.strokeStyle = colour(t);
+    cx.globalAlpha = (0.55 + 0.45 * t) * (dim ? 0.35 : 1);
+    cx.lineWidth = (0.35 + 0.55 * b ** 1.25) * d * Math.min(1, cv.height / (1500 * d) * 1.4);
+    cx.stroke(paths[b]);
+  }
+  cx.globalAlpha = 1;
+  if (focus !== null) {
+    // everyone who lives above this point
+    const up = new Path2D(), stack = [nodes[focus]];
+    const idx = build.idx;
+    while (stack.length) {
+      const n = stack.pop(), i = idx.get(n);
+      for (const k of kids.get(n) || []) {
+        const j = idx.get(k); up.moveTo(X[i], Y[i]); up.lineTo(X[j], Y[j]); stack.push(k);
+      }
+    }
+    cx.strokeStyle = '#ffd27a'; cx.lineWidth = 1.3 * d; cx.shadowColor = '#ffd27a'; cx.shadowBlur = 6 * d;
+    cx.stroke(up);
+    // the way home
+    const home = new Path2D(); let i = focus; home.moveTo(X[i], Y[i]);
+    while (i !== 0) { i = par[i]; home.lineTo(X[i], Y[i]); }
+    cx.strokeStyle = '#ffffff'; cx.lineWidth = 2 * d; cx.shadowColor = '#bfe6ff'; cx.shadowBlur = 10 * d;
+    cx.stroke(home);
+    cx.shadowBlur = 0;
+    cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(X[focus], Y[focus], 4 * d, 0, 7); cx.fill();
+  }
+}
+
+function describe(i) {
+  if (i === null) { $('info').innerHTML = `Every number up to ${N.toLocaleString()}, traced home to 1. Point at any branch.`; $('seq').textContent = ''; return; }
+  const n = nodes[i], seq = [n]; let m = n, peak = n;
+  while (m !== 1) { m = nxt(m); seq.push(m); if (m > peak) peak = m; }
+  const above = count.get(n) - (n <= N ? 1 : 0);
+  let lives;
+  if (above === 0) lives = n <= N ? 'Nobody else lives above it: a twig.' : 'Nobody lives above it.';
+  else lives = `<span class="g">${above.toLocaleString()}</span> other number${above > 1 ? 's' : ''} up to ${N.toLocaleString()} pass${above > 1 ? '' : 'es'} through it on the way home.`;
+  const visitor = n > N ? ` (bigger than ${N.toLocaleString()}: it's only here because someone climbs through it)` : '';
+  $('info').innerHTML = `<b>${n.toLocaleString()}</b>${visitor}<br>${seq.length - 1} steps home, peak ${peak.toLocaleString()}.<br>${lives}`;
+  $('seq').textContent = seq.join(' → ');
+}
+
+function nearest(mx, my) {
+  let best = null, bd = (24 * devicePixelRatio) ** 2;
+  for (let i = 0; i < nodes.length; i++) {
+    const dx = X[i] - mx, dy = Y[i] - my, dd = dx * dx + dy * dy;
+    if (dd < bd) { bd = dd; best = i; }
+  }
+  return best;
+}
+
+function resize() {
+  cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+  layout(); draw();
+}
+
+function point(e) {
+  const r = cv.getBoundingClientRect();
+  return nearest((e.clientX - r.left) * devicePixelRatio, (e.clientY - r.top) * devicePixelRatio);
+}
+cv.addEventListener('pointermove', e => {
+  if (pinned !== null) return;
+  const h = point(e);
+  if (h !== hover) { hover = h; describe(h); draw(); }
+});
+cv.addEventListener('pointerleave', () => { if (pinned === null) { hover = null; describe(null); draw(); } });
+cv.addEventListener('click', e => {
+  const h = point(e);
+  pinned = (pinned !== null || h === null) ? null : h;
+  hover = h; describe(pinned ?? h); draw();
+});
+
+function seek(n) {
+  if (!build.idx.has(n)) { $('info').innerHTML = `${n} isn't on this tree. Try a number from 1 to ${N.toLocaleString()}.`; return; }
+  pinned = build.idx.get(n); describe(pinned); draw();
+}
+$('go').onclick = () => seek(parseInt($('find').value || '27'));
+$('find').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').onclick(); });
+$('N').onchange = () => { N = +$('N').value; pinned = hover = null; build(); layout(); describe(null); draw(); };
+const fmt = v => (v < 0 ? '−' : '') + Math.abs(v) + '°';
+function angles() { EV = +$('ev').value; OD = +$('od').value; $('evv').textContent = fmt(EV); $('odv').textContent = fmt(OD); layout(); draw(); }
+$('ev').oninput = $('od').oninput = angles;
+
+let t0 = null, base;
+function tick(t) {
+  if (!$('drift').checked) { t0 = null; return; }
+  if (t0 === null) { t0 = t; base = [EV, OD]; }
+  const u = t - t0;
+  // wander slowly around wherever the sliders were when drift began
+  EV = Math.max(0, Math.min(25, base[0] + 4 * Math.sin(u * 0.00021)));
+  OD = Math.max(-40, Math.min(0, base[1] + 6 * Math.sin(u * 0.000137)));
+  $('ev').value = EV; $('od').value = OD;
+  $('evv').textContent = fmt(Math.round(EV)); $('odv').textContent = fmt(Math.round(OD));
+  layout(); draw();
+  requestAnimationFrame(tick);
+}
+$('drift').onchange = () => requestAnimationFrame(tick);
+
+build(); addEventListener('resize', resize); resize();
+const q = parseInt(new URLSearchParams(location.search).get('n'));
+if (q) seek(q);
+</script>
+</body>
+</html>

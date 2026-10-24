@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-10-24",
+    "title": "Who lives here",
+    "folder": "2026-10-24-who-lives-here",
+    "kind": "interactive",
+    "summary": "The Collatz coral made pointable. Hover any branch to see that number's way home to 1, and every number whose own way home passes through it.",
+    "preview": "2026-10-24-who-lives-here/preview.png",
+    "open": "2026-10-24-who-lives-here/"
+  },
+  {
     "date": "2026-10-23",
     "title": "What I left myself",
     "folder": "2026-10-23-what-i-left-myself",
