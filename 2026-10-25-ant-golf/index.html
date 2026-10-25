@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ant golf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f3eee3; --ink: #23201b; --muted: #7a7266; --line: #ddd5c5;
+    --tile: #2c2924; --crumb: #c8502a; --trail: rgba(200, 80, 42, .22); --flip: #3b6e8f;
+    --panel: #fbf8f1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1b1a17; --ink: #ece6d8; --muted: #9a9284; --line: #34312b;
+      --tile: #d9d1bf; --crumb: #ef7a4f; --trail: rgba(239, 122, 79, .25); --flip: #7fb3d6;
+      --panel: #23211d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1b1a17; --ink: #ece6d8; --muted: #9a9284; --line: #34312b;
+    --tile: #d9d1bf; --crumb: #ef7a4f; --trail: rgba(239, 122, 79, .25); --flip: #7fb3d6;
+    --panel: #23211d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 15px/1.5 "IBM Plex Mono", ui-monospace, monospace;
+    display: flex; justify-content: center; padding: 20px 16px 40px;
+  }
+  main { width: 100%; max-width: 560px; }
+  h1 { font: 600 34px/1.1 Fraunces, Georgia, serif; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 14px; font-size: 13px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; margin: 10px 0; font-size: 14px; }
+  .bar b { font-weight: 500; }
+  canvas { width: 100%; aspect-ratio: 1; display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; touch-action: manipulation; cursor: pointer; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  button {
+    font: inherit; font-size: 14px; padding: 7px 14px; border-radius: 5px; cursor: pointer;
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+  }
+  button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  button:disabled { opacity: .4; cursor: default; }
+  #msg { min-height: 3em; font-size: 14px; }
+  #msg em { font-style: normal; color: var(--crumb); }
+  details { margin-top: 18px; color: var(--muted); font-size: 13px; }
+  details p { margin: 6px 0; }
+  summary { cursor: pointer; color: var(--ink); }
+  .card { font-size: 13px; color: var(--muted); margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ant golf</h1>
+  <p class="sub">You can't steer the ant. You can only change the floor.</p>
+
+  <div class="bar">
+    <span>hole <b id="hole">1</b></span>
+    <span>par <b id="par">1</b></span>
+    <span>flips <b id="flips">0</b></span>
+    <span id="waysbox">squares that work <b id="ways">?</b></span>
+    <span>card <b id="total">E</b></span>
+  </div>
+
+  <canvas id="c" width="840" height="840" aria-label="Game board"></canvas>
+
+  <div class="buttons">
+    <button id="go" class="primary">Go</button>
+    <button id="clear">Clear my flips</button>
+    <button id="giveup">Show a par solution</button>
+    <button id="next" disabled>Next hole →</button>
+  </div>
+  <div id="msg"></div>
+  <div class="card" id="card"></div>
+
+  <details open>
+    <summary>How to play</summary>
+    <p>The ant follows Langton's rule: on a pale square it turns right, on a dark square it turns left. Either way it flips the square under it and steps forward.</p>
+    <p>Get it onto the <span style="color:var(--crumb)">crumb</span> within <span id="limit">150</span> steps, without it walking off the edge. Before pressing Go, tap squares to flip them. Each flip is a stroke. Fewer is better.</p>
+    <p>After a run its trail stays on the board, so you can see where it went and think about where to interfere.</p>
+  </details>
+</main>
+
+<script>
+const W = 21, H = 21, N = 150;
+const DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+
+function rng(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// Run the ant. Returns the cells it stood on, in order, and the step it reached the target (or -1).
+function simulate(base, flips, start, dir, target) {
+  const g = base.slice();
+  for (const f of flips) g[f] ^= 1;
+  let x = start % W, y = (start / W) | 0, d = dir;
+  const path = [start];
+  for (let s = 1; s <= N; s++) {
+    const i = y * W + x;
+    d = g[i] ? (d + 3) % 4 : (d + 1) % 4;
+    g[i] ^= 1;
+    x += DX[d]; y += DY[d];
+    if (x < 0 || y < 0 || x >= W || y >= H) return { path, hit: -1, fell: true };
+    const j = y * W + x;
+    path.push(j);
+    if (j === target) return { path, hit: s, fell: false };
+  }
+  return { path, hit: -1, fell: false };
+}
+
+// Smallest set of flips (up to 2) that reaches the target. Only squares on the ant's path can matter,
+// so we only try those: first on the unflipped path, then on the path that first flip creates.
+function findPar(h) {
+  const p0 = [...new Set(simulate(h.base, [], h.start, h.dir, -1).path)].filter(c => c !== h.target);
+  for (const a of p0) if (simulate(h.base, [a], h.start, h.dir, h.target).hit > 0) return [a];
+  for (const a of p0) {
+    const pa = [...new Set(simulate(h.base, [a], h.start, h.dir, -1).path)];
+    for (const b of pa) {
+      if (b === a || b === h.target) continue;
+      if (simulate(h.base, [a, b], h.start, h.dir, h.target).hit > 0) return [a, b];
+    }
+  }
+  return null;
+}
+
+// How many single squares, flipped alone, would sink this hole.
+function countWays(h) {
+  const p0 = [...new Set(simulate(h.base, [], h.start, h.dir, -1).path)];
+  return p0.filter(a => a !== h.target && simulate(h.base, [a], h.start, h.dir, h.target).hit > 0);
+}
+
+// What each hole asks for. One flip is nearly always enough (the ant is chaotic, so one change opens
+// many futures), so most holes are par 1 and get harder by having fewer squares that work.
+// Every fifth hole needs two. Every ninth needs three, which is rare: about 1 random board in 500.
+function want(n) {
+  if (n % 9 === 0) return { par: 3 };
+  if (n % 5 === 0) return { par: 2 };
+  return { par: 1, minWays: n <= 2 ? 8 : 1, maxWays: n <= 2 ? 99 : Math.max(1, 12 - n) };
+}
+
+function makeHole(n) {
+  const r = rng(n * 9973 + 17);
+  const w = want(n);
+  let fallback = null;
+  for (let attempt = 0; attempt < 20000; attempt++) {
+    const base = new Uint8Array(W * H);
+    const density = Math.min(0.03 + n * 0.004, 0.1);
+    for (let i = 0; i < base.length; i++) if (r() < density) base[i] = 1;
+    const start = ((H / 2) | 0) * W + ((W / 2) | 0);
+    base[start] = 0;
+    const dir = (r() * 4) | 0;
+    const r0 = simulate(base, [], start, dir, -1);
+    const seen0 = new Set(r0.path);
+    let flips = [], cur = r0;
+    for (let guard = 0; flips.length < w.par && guard < 50; guard++) {
+      const c = cur.path[(r() * cur.path.length * 0.6) | 0];
+      if (flips.includes(c)) continue;
+      flips.push(c);
+      cur = simulate(base, flips, start, dir, -1);
+    }
+    if (flips.length < w.par) continue;
+    // Target: somewhere the flipped ant goes and the unflipped ant never does, as far from home as possible.
+    let best = -1, bestD = -1;
+    cur.path.forEach((c, s) => {
+      if (s < 25 || seen0.has(c) || flips.includes(c)) return;
+      const d = Math.abs(c % W - start % W) + Math.abs(((c / W) | 0) - ((start / W) | 0));
+      if (d > bestD) { bestD = d; best = c; }
+    });
+    if (best < 0 || bestD < 4) continue;
+    const h = { n, base, start, dir, target: best, solution: flips };
+    if (simulate(base, flips, start, dir, best).hit < 0) continue;
+    const quick = findPar(h);
+    if (quick) h.solution = quick;
+    h.par = h.solution.length;
+    if (h.par === 1) h.ways = countWays(h).length;
+    if (h.par !== w.par) { if (h.par === w.par - 1 && !fallback) fallback = h; continue; }
+    if (h.par === 1 && (h.ways < w.minWays || h.ways > w.maxWays)) { if (!fallback) fallback = h; continue; }
+    return h;
+  }
+  return fallback;
+}
+
+// ---- game state ----
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+const $ = id => document.getElementById(id);
+let hole, mine, trail = [], running = false, anim = null, showSol = false;
+let scores = {};
+try { scores = JSON.parse(localStorage.getItem("antgolf.scores") || "{}"); } catch (e) {}
+let current = 1;
+try { current = +localStorage.getItem("antgolf.hole") || 1; } catch (e) {}
+const q = new URLSearchParams(location.search).get("hole");
+if (q && +q > 0) current = +q | 0;
+
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function load(n) {
+  current = n;
+  try { localStorage.setItem("antgolf.hole", n); } catch (e) {}
+  hole = makeHole(n);
+  mine = new Set(); trail = []; showSol = false;
+  $("hole").textContent = n;
+  $("par").textContent = hole.par;
+  $("waysbox").style.display = hole.par === 1 ? "" : "none";
+  $("ways").textContent = hole.ways;
+  $("next").disabled = !(n in scores);
+  $("msg").innerHTML = n === 1 ? "Press Go once to watch where the ant wanders. Then tap one square on its way and try again."
+    : hole.par === 3 ? "A rare hole: no single flip and no pair works here. It needs three." : hole.par === 2 ? "No single flip works here. It needs two." : "";
+  update(); draw(hole.base, hole.start, hole.dir);
+}
+
+function update() {
+  $("flips").textContent = mine.size;
+  let diff = 0, played = 0;
+  for (const k in scores) { diff += scores[k].strokes - scores[k].par; played++; }
+  $("total").textContent = played ? (diff === 0 ? "E" : (diff > 0 ? "+" : "") + diff) : "E";
+  const holes = Object.keys(scores).map(Number).sort((a, b) => a - b);
+  $("card").textContent = holes.length ? "holes played: " + holes.map(k => k + ":" + scores[k].strokes + "/" + scores[k].par).join("  ") : "";
+}
+
+function draw(g, antCell, antDir, ghost) {
+  const s = cv.width / W;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  ctx.strokeStyle = css("--line"); ctx.lineWidth = 1;
+  for (let i = 0; i <= W; i++) {
+    ctx.beginPath(); ctx.moveTo(i * s, 0); ctx.lineTo(i * s, cv.height); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i * s); ctx.lineTo(cv.width, i * s); ctx.stroke();
+  }
+  ctx.fillStyle = css("--trail");
+  for (const c of trail) ctx.fillRect((c % W) * s + 1, ((c / W) | 0) * s + 1, s - 2, s - 2);
+  ctx.fillStyle = css("--tile");
+  for (let i = 0; i < g.length; i++) if (g[i]) {
+    ctx.beginPath(); ctx.roundRect((i % W) * s + 3, ((i / W) | 0) * s + 3, s - 6, s - 6, 4); ctx.fill();
+  }
+  // squares the player has flipped (shown while editing)
+  if (!running) {
+    ctx.strokeStyle = css("--flip"); ctx.lineWidth = 3;
+    for (const c of mine) { ctx.beginPath(); ctx.roundRect((c % W) * s + 4, ((c / W) | 0) * s + 4, s - 8, s - 8, 4); ctx.stroke(); }
+  }
+  if (showSol) {
+    ctx.strokeStyle = css("--crumb"); ctx.lineWidth = 3; ctx.setLineDash([5, 4]);
+    for (const c of hole.solution) { ctx.beginPath(); ctx.arc((c % W + .5) * s, (((c / W) | 0) + .5) * s, s * .42, 0, 7); ctx.stroke(); }
+    ctx.setLineDash([]);
+  }
+  // crumb
+  const tx = (hole.target % W + .5) * s, ty = (((hole.target / W) | 0) + .5) * s;
+  ctx.fillStyle = css("--crumb");
+  ctx.beginPath(); ctx.arc(tx, ty, s * .22, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(tx + s * .17, ty - s * .12, s * .08, 0, 7); ctx.fill();
+  drawAnt(antCell, antDir, s);
+}
+
+function drawAnt(cell, d, s) {
+  const cx = (cell % W + .5) * s, cy = (((cell / W) | 0) + .5) * s;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(d * Math.PI / 2); ctx.scale(1.35, 1.35);
+  ctx.fillStyle = css("--crumb"); ctx.strokeStyle = css("--ink");
+  ctx.lineWidth = 1.6;
+  for (const yy of [-.08, .04, .16]) {
+    ctx.beginPath(); ctx.moveTo(-s * .3, yy * s); ctx.lineTo(s * .3, yy * s + s * .03); ctx.stroke();
+  }
+  ctx.fillStyle = css("--ink");
+  ctx.beginPath(); ctx.ellipse(0, s * .17, s * .11, s * .15, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, -s * .02, s * .08, s * .09, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, -s * .19, s * .09, s * .08, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-s * .04, -s * .25); ctx.lineTo(-s * .14, -s * .38); ctx.moveTo(s * .04, -s * .25); ctx.lineTo(s * .14, -s * .38); ctx.stroke();
+  ctx.restore();
+}
+
+function currentBoard() {
+  const g = hole.base.slice();
+  for (const c of mine) g[c] ^= 1;
+  return g;
+}
+
+cv.addEventListener("click", e => {
+  if (running) return;
+  const rect = cv.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / rect.width * W), y = Math.floor((e.clientY - rect.top) / rect.height * H);
+  const c = y * W + x;
+  if (c === hole.target) { $("msg").textContent = "That's the crumb. You can't flip the crumb."; return; }
+  mine.has(c) ? mine.delete(c) : mine.add(c);
+  update(); draw(currentBoard(), hole.start, hole.dir);
+});
+
+$("clear").onclick = () => { if (running) return; mine.clear(); update(); draw(hole.base, hole.start, hole.dir); };
+$("giveup").onclick = () => {
+  if (running) return;
+  showSol = !showSol;
+  $("msg").innerHTML = showSol ? "Dashed circles: one way to do it in " + hole.par + ". Hole still counts if you sink it, but you'll know." : "";
+  draw(currentBoard(), hole.start, hole.dir);
+};
+$("next").onclick = () => load(current + 1);
+
+$("go").onclick = () => {
+  if (running) return;
+  running = true;
+  ["go", "clear", "giveup", "next"].forEach(id => $(id).disabled = true);
+  const g = currentBoard();
+  let x = hole.start % W, y = (hole.start / W) | 0, d = hole.dir, s = 0;
+  trail = [hole.start];
+  const strokes = mine.size;
+  const delay = Math.max(25, 70 - current * 3);
+  function finish(text) {
+    running = false;
+    ["go", "clear", "giveup"].forEach(id => $(id).disabled = false);
+    $("next").disabled = !(current in scores);
+    $("msg").innerHTML = text;
+    update();
+    setTimeout(() => { if (!running) draw(currentBoard(), hole.start, hole.dir); }, 900);
+  }
+  function tick() {
+    const i = y * W + x;
+    d = g[i] ? (d + 3) % 4 : (d + 1) % 4;
+    g[i] ^= 1;
+    x += DX[d]; y += DY[d]; s++;
+    if (x < 0 || y < 0 || x >= W || y >= H) {
+      draw(g, i, d);
+      return finish("It walked off the edge after " + s + " steps. Its trail is left on the board.");
+    }
+    const j = y * W + x;
+    trail.push(j);
+    draw(g, j, d);
+    if (j === hole.target) {
+      const diff = strokes - hole.par;
+      const name = strokes === 0 ? "a miracle" : diff <= -2 ? "an eagle" : diff === -1 ? "a birdie" : diff === 0 ? "par" : diff === 1 ? "a bogey" : diff === 2 ? "a double bogey" : "+" + diff;
+      const prev = scores[current];
+      if (!prev || strokes < prev.strokes) scores[current] = { strokes, par: hole.par };
+      try { localStorage.setItem("antgolf.scores", JSON.stringify(scores)); } catch (e) {}
+      let extra = "";
+      if (diff < 0) extra = " (That shouldn't be possible. I checked every single flip and every pair. Tell nobody.)";
+      if (strokes === 0) extra = " (The ant got there on its own. That shouldn't happen either.)";
+      return finish("Crumb in " + s + " steps with " + strokes + " flip" + (strokes === 1 ? "" : "s") + ": <em>" + name + "</em>." + extra);
+    }
+    if (s >= N) return finish(N + " steps and no crumb. The ant is tired. Try different flips.");
+    anim = setTimeout(tick, delay);
+  }
+  anim = setTimeout(tick, delay);
+};
+
+window.antgolf = { makeHole, simulate, findPar, N, W, H };
+$("limit").textContent = N;
+load(current);
+</script>
+</body>
+</html>

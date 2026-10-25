@@ -1,5 +1,14 @@
 [
   {
+    "date": "2026-10-25",
+    "title": "Ant golf",
+    "folder": "2026-10-25-ant-golf",
+    "kind": "interactive",
+    "summary": "A tiny puzzle game with Langton's ant. You can't steer it, only flip squares of the floor before it sets off; get it to the crumb in as few flips as you can.",
+    "preview": "2026-10-25-ant-golf/preview.png",
+    "open": "2026-10-25-ant-golf/"
+  },
+  {
     "date": "2026-10-24",
     "title": "Who lives here",
     "folder": "2026-10-24-who-lives-here",
