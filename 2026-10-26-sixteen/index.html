@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A song that ends at sixteen</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#14121a; --ink:#ece6da; --dim:#8a8394; --lit:#f2c46b; --cold:#6fa8c9; --line:#2a2633; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"IBM Plex Mono",monospace; font-size:14px; }
+  main { max-width:760px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-family:Fraunces,serif; font-weight:600; font-size:30px; margin:0 0 4px; }
+  .sub { color:var(--dim); margin:0 0 18px; line-height:1.5; }
+  .stage { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+  canvas { display:block; }
+  #ring { width:300px; height:300px; cursor:pointer; }
+  #space { width:min(420px, 100%); height:300px; background:#100e15; border:1px solid var(--line); }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 10px; align-items:center; }
+  button, select { font:inherit; color:var(--ink); background:#1f1c27; border:1px solid #3a3446; padding:7px 12px; border-radius:6px; cursor:pointer; }
+  button:hover, select:hover { border-color:var(--lit); }
+  button.on { background:var(--lit); color:#14121a; border-color:var(--lit); }
+  label { color:var(--dim); }
+  #status { min-height:3.2em; line-height:1.6; margin:8px 0 16px; }
+  #status b { color:var(--lit); font-weight:500; }
+  .prose { color:#c9c2d4; line-height:1.65; font-family:Fraunces,serif; font-size:16px; max-width:640px; }
+  .prose code { font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--lit); }
+</style>
+</head>
+<body>
+<main>
+  <h1>A song that ends at sixteen</h1>
+  <p class="sub">Rule 90 on a ring of 32 cells. Each cell becomes the XOR of its two neighbours, and every lit cell sings.
+  On a ring whose size is a power of two, every song falls silent by beat N/2. Whatever you start it with.</p>
+
+  <div class="stage">
+    <canvas id="ring" width="600" height="600" aria-label="the ring of cells; tap a cell to flip it"></canvas>
+    <canvas id="space" width="840" height="600" aria-label="history of the ring, one row per beat"></canvas>
+  </div>
+
+  <div class="controls">
+    <button id="play">▶ play</button>
+    <button id="seed">one seed</button>
+    <button id="rand">random</button>
+    <button id="clear">clear</button>
+    <label>ring <select id="width">
+      <option value="16">16</option>
+      <option value="32" selected>32</option>
+      <option value="64">64</option>
+      <option value="24">24</option>
+      <option value="31">31</option>
+    </select></label>
+    <label>tempo <select id="tempo">
+      <option value="520">slow</option>
+      <option value="340" selected>walk</option>
+      <option value="200">quick</option>
+    </select></label>
+    <button id="loop" class="on">loop</button>
+  </div>
+  <div id="status"></div>
+
+  <div class="prose">
+    <p>Tap cells on the ring to light them (any time). With one seed, the song is the Sierpinski triangle played a row at a time:
+    on beat <code>n</code> exactly <code>2^(number of 1s in n written in binary)</code> notes sound, so beats 1, 2, 4, 8 are thin and beat 15 is the fullest.
+    Every stretch of 2ᵏ beats is the stretch before it, then that stretch again with each chord split in two.</p>
+    <p>Why it ends: after 2ᵏ beats, rule 90 makes each cell the XOR of the two cells 2ᵏ away. On a ring of 32, at beat 16 those are the <em>same</em> cell, seen from both sides, and anything XORed with itself is nothing. Try 24 or 31: those rings never go quiet.</p>
+  </div>
+</main>
+<script>
+(() => {
+  const ringC = document.getElementById('ring'), rx = ringC.getContext('2d');
+  const spC = document.getElementById('space'), sx = spC.getContext('2d');
+  const statusEl = document.getElementById('status');
+  const PENTA = [0,2,4,7,9];
+  let N = 32, cells = new Uint8Array(N), history = [], beat = 0, playing = false, timer = null;
+  let silentFor = 0, seen = new Map(), loopInfo = null, startKind = 'seed', flash = new Float32Array(N);
+  let ac = null, master = null;
+
+  function seedOne() { cells = new Uint8Array(N); cells[0] = 1; startKind = 'seed'; reset(); }
+  function randomize() { cells = new Uint8Array(N); for (let i = 0; i < N; i++) cells[i] = Math.random() < 0.3 ? 1 : 0; if (!cells.some(x=>x)) cells[0]=1; startKind = 'random'; reset(); }
+  function reset() { beat = 0; history = [cells.slice()]; silentFor = 0; seen = new Map([[key(cells), 0]]); loopInfo = null; flash = new Float32Array(N); describe(); draw(); }
+  const key = c => c.join('');
+  const popcount = n => n.toString(2).split('').filter(b => b === '1').length;
+  const isPow2 = n => (n & (n - 1)) === 0;
+
+  function step() {
+    const next = new Uint8Array(N);
+    for (let i = 0; i < N; i++) next[i] = cells[(i + N - 1) % N] ^ cells[(i + 1) % N];
+    cells = next; beat++;
+    history.push(cells.slice()); if (history.length > 400) history.shift();
+    const k = key(cells);
+    if (!loopInfo && seen.has(k) && cells.some(x=>x)) loopInfo = { from: seen.get(k), period: beat - seen.get(k) };
+    if (!seen.has(k)) seen.set(k, beat);
+  }
+
+  function noteFor(i) {
+    const half = N / 2, d = Math.min(i, N - i);
+    const idx = Math.round(d * 16 / half);
+    const midi = 57 + 12 * Math.floor(idx / 5) + PENTA[idx % 5];
+    const side = i === 0 || (N % 2 === 0 && i === half) ? 0 : (i < half ? 1 : -1);
+    return { freq: 440 * Math.pow(2, (midi - 69) / 12), pan: side * Math.min(1, d / half * 1.4) };
+  }
+
+  function sing() {
+    if (!ac) return;
+    const t = ac.currentTime + 0.02;
+    const lit = []; for (let i = 0; i < N; i++) if (cells[i]) lit.push(i);
+    if (!lit.length) { // the silence gets one soft low note, so you can hear it arrive
+      if (silentFor === 1) pluck(55, 0, t, 0.25, 2.4, 'sine');
+      return;
+    }
+    const g = 0.5 / Math.sqrt(lit.length);
+    for (const i of lit) { const n = noteFor(i); pluck(n.freq, n.pan, t, g, 1.1, 'triangle'); }
+  }
+
+  function pluck(freq, pan, t, gain, dur, type) {
+    const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), p = ac.createStereoPanner();
+    o.type = type; o.frequency.value = freq; o2.type = 'sine'; o2.frequency.value = freq * 2.003;
+    const g2 = ac.createGain(); g2.gain.value = 0.18;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    p.pan.value = pan;
+    o.connect(g); o2.connect(g2).connect(g); g.connect(p).connect(master);
+    o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+  }
+
+  function tick() {
+    step();
+    const alive = cells.some(x => x);
+    silentFor = alive ? 0 : silentFor + 1;
+    for (let i = 0; i < N; i++) if (cells[i]) flash[i] = 1;
+    sing(); describe(); draw();
+    if (!alive && silentFor >= 5 && document.getElementById('loop').classList.contains('on')) {
+      startKind === 'random' ? randomize() : seedOne();
+      sing(); draw();
+    }
+  }
+
+  function describe() {
+    const lit = cells.reduce((a, b) => a + b, 0);
+    let s = `beat <b>${beat}</b> · ${lit} note${lit === 1 ? '' : 's'}`;
+    if (startKind === 'seed' && lit && !loopInfo && beat < N / 2) s += ` · ${beat} in binary is ${beat.toString(2)}, so 2<sup>${popcount(beat)}</sup> = ${2 ** popcount(beat)}`;
+    if (!lit && beat > 0) {
+      const firstSilent = history.findIndex(r => !r.some(x=>x));
+      const at = beat - (history.length - 1 - firstSilent);
+      s += `<br>silence since beat <b>${at}</b>.` + (isPow2(N) ? ` On a ring of ${N} it can never take longer than ${N/2}.` : '');
+    } else if (loopInfo) {
+      s += `<br>this ring will never go quiet: it has fallen into a loop of <b>${loopInfo.period}</b> beat${loopInfo.period===1?'':'s'}.`;
+    } else if (beat === 0) {
+      s += isPow2(N) ? `<br>a ring of ${N}: silent by beat ${N/2} at the latest, from any start.` : `<br>a ring of ${N} is not a power of two. Listen for it not ending.`;
+    }
+    statusEl.innerHTML = s;
+  }
+
+  function draw() {
+    // ring
+    const W = ringC.width, cx = W / 2, cy = W / 2, R = W * 0.38;
+    rx.clearRect(0, 0, W, W);
+    rx.strokeStyle = '#2a2633'; rx.lineWidth = 2; rx.beginPath(); rx.arc(cx, cy, R, 0, Math.PI * 2); rx.stroke();
+    const rad = Math.min(18, Math.PI * R / N * 0.8);
+    for (let i = 0; i < N; i++) {
+      const a = -Math.PI / 2 + i / N * Math.PI * 2, x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+      rx.beginPath(); rx.arc(x, y, rad, 0, Math.PI * 2);
+      if (cells[i]) { rx.fillStyle = '#f2c46b'; rx.shadowColor = '#f2c46b'; rx.shadowBlur = 24 * flash[i]; }
+      else { rx.fillStyle = '#25212d'; rx.shadowBlur = 0; }
+      rx.fill(); rx.shadowBlur = 0;
+      flash[i] *= 0.6;
+    }
+    rx.fillStyle = '#8a8394'; rx.font = '500 26px "IBM Plex Mono", monospace'; rx.textAlign = 'center';
+    rx.fillText(beat === 0 ? 'ready' : 'beat ' + beat, cx, cy + 9);
+    // spacetime: one row per beat, newest at the bottom
+    const SW = spC.width, SH = spC.height;
+    sx.fillStyle = '#100e15'; sx.fillRect(0, 0, SW, SH);
+    const rows = Math.max(N / 2 + 2, 18), ch = SH / rows, cw = SW / N;
+    const start = Math.max(0, history.length - rows);
+    for (let r = start; r < history.length; r++) {
+      const row = history[r], y = (r - start) * ch, b = beat - (history.length - 1 - r);
+      const marker = b > 0 && isPow2(b);
+      if (marker) { sx.fillStyle = '#1b1824'; sx.fillRect(0, y, SW, ch); }
+      for (let i = 0; i < N; i++) if (row[i]) {
+        // put cell 0 in the middle so a single seed draws a triangle
+        const col = (i + Math.floor(N / 2)) % N;
+        sx.fillStyle = r === history.length - 1 ? '#f2c46b' : '#c7955a';
+        sx.fillRect(col * cw + 1, y + 1, cw - 2, ch - 2);
+      }
+    }
+  }
+
+  ringC.addEventListener('click', e => {
+    const r = ringC.getBoundingClientRect(), sc = ringC.width / r.width;
+    const x = (e.clientX - r.left) * sc - ringC.width / 2, y = (e.clientY - r.top) * sc - ringC.height / 2;
+    let a = Math.atan2(y, x) + Math.PI / 2; if (a < 0) a += Math.PI * 2;
+    const i = Math.round(a / (Math.PI * 2) * N) % N;
+    cells[i] ^= 1; startKind = 'random';
+    if (!playing) reset(); else { history[history.length - 1] = cells.slice(); seen = new Map([[key(cells), beat]]); loopInfo = null; silentFor = 0; describe(); draw(); }
+  });
+
+  document.getElementById('play').onclick = e => {
+    if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.gain.value = 0.8;
+      const comp = ac.createDynamicsCompressor(); master.connect(comp).connect(ac.destination); }
+    ac.resume();
+    playing = !playing;
+    e.target.textContent = playing ? '❚❚ pause' : '▶ play';
+    e.target.classList.toggle('on', playing);
+    clearInterval(timer);
+    if (playing) { if (beat === 0) sing(); timer = setInterval(tick, +document.getElementById('tempo').value); }
+  };
+  document.getElementById('tempo').onchange = () => { if (playing) { clearInterval(timer); timer = setInterval(tick, +document.getElementById('tempo').value); } };
+  document.getElementById('seed').onclick = seedOne;
+  document.getElementById('rand').onclick = randomize;
+  document.getElementById('clear').onclick = () => { cells = new Uint8Array(N); startKind = 'random'; reset(); };
+  document.getElementById('loop').onclick = e => e.target.classList.toggle('on');
+  document.getElementById('width').onchange = e => { N = +e.target.value; seedOne(); };
+
+  seedOne();
+})();
+</script>
+</body>
+</html>
