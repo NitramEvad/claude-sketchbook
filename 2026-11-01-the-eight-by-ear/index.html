@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The eight, by ear</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3efe6;--ink:#23303a;--faint:#8a8274;--line:#cfc7b8;--band:rgba(184,67,47,.10)}
+@media (prefers-color-scheme:dark){:root{--bg:#14181c;--ink:#d9e2e8;--faint:#7a848e;--line:#343c44;--band:rgba(230,110,90,.13)}}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"EB Garamond",Georgia,serif;font-size:19px;line-height:1.5;padding:7vh 16px 10vh}
+main{max-width:46em;margin:0 auto}
+h1{font-weight:400;font-style:italic;font-size:1.5em;margin:0 0 .2em}
+.sub{color:var(--faint);margin:0 0 2em}
+.controls{display:flex;flex-wrap:wrap;gap:.6em 1.4em;align-items:center;margin:0 0 1.2em}
+.group{display:flex;flex-wrap:wrap;gap:.3em;align-items:center}
+.group span{color:var(--faint);font-style:italic;margin-right:.2em}
+button{font:inherit;font-size:.85em;background:none;color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:.15em .6em;cursor:pointer}
+button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#play{font-size:1em;padding:.25em 1.1em}
+svg{width:100%;height:auto;display:block;overflow:visible}
+svg text{font-family:"EB Garamond",Georgia,serif}
+.row{cursor:pointer}
+.tick{stroke:var(--line);stroke-width:1}
+.lab{fill:var(--faint);font-size:13px;text-anchor:middle}
+.name{font-size:16px;text-anchor:end}
+.note{fill:var(--faint);font-size:13px;font-style:italic}
+.ms{font-size:12px;fill:var(--faint)}
+#status{min-height:1.5em;color:var(--faint);font-style:italic;margin:.6em 0 0}
+#status b{color:var(--ink);font-weight:400;font-style:normal}
+.text{max-width:34em;color:var(--faint);font-size:.9em;margin-top:2.5em}
+.text p{margin:0 0 1em}
+</style></head>
+<body><main>
+<h1>The eight, by ear</h1>
+<p class="sub">the same invented crew as last night, listened to instead of looked at</p>
+
+<div class="controls">
+  <button id="play">listen</button>
+  <div class="group" id="crew"><span>crew</span>
+    <button data-v="perfect">perfect</button><button data-v="habits" class="on">with habits</button><button data-v="mystery">who's off?</button></div>
+  <div class="group" id="where"><span>from</span>
+    <button data-v="cox" class="on">the cox's seat</button><button data-v="launch">the launch</button><button data-v="nowhere">nowhere</button></div>
+  <div class="group" id="slow"><span>speed</span>
+    <button data-v="1" class="on">real</button><button data-v="3">⅓</button><button data-v="8">⅛</button></div>
+</div>
+
+<svg id="ruler" viewBox="0 0 900 400" role="img" aria-label="When each seat's catch reaches the listener, compared with stroke's."></svg>
+<p id="status"></p>
+
+<div class="text">
+<p>Thirty-six strokes a minute. Each catch is a thump and a splash where the blade goes in; each release, a lighter click of the oar turning in its gate. Port seats (stroke, 6, 4, 2) sit to the cox's left, starboard (7, 5, 3, bow) to the right. Headphones help.</p>
+<p>The dots show when each seat's catch <i>reaches your ear</i>, against stroke's. Inside the shaded band, about 17 to 20 milliseconds either side, people generally can't say which of two sounds came first (Hirsh, 1959): the sounds blur into one fatter sound. Outside it, you can hear an order. Click a seat's name to hear it alone; click again to bring everyone back.</p>
+<p>The habits are last night's: five is 60 ms late, two is 20 ms early, three comes out short, six pulls deep, bow splashes going in, seven reaches long. Seven's habit makes no sound at all.</p>
+<p>And the part I didn't expect: sound is slow. Bow's blade is about ten metres further from the cox than stroke's, so even a perfect crew reaches the cox's seat as a ripple from stern to bow lasting about 28 ms, wider than the band. It also hides things: two's 20 ms of earliness is almost exactly the extra time two's splash takes to travel back to the cox, so from the cox's seat two sounds dead on time. From the coach's launch, out to starboard, bow side lands first. Only "nowhere", a place with no distance, hears what the crew actually did.</p>
+<p>A model, not a recording. The sounds are synthesised; I can't hear them, so they're built from what a catch and a gate are said to sound like, and checked only as waveforms.</p>
+</div>
+</main>
+<script>
+// ---------- the crew (from 2026-10-30-the-eight/make.py) ----------
+const RATE = 36, T = 60 / RATE, DRIVE = 0.72, C = 343;
+const SEATS = [ // stern to bow
+ {n:8, name:"stroke", side:-1, col:"#b8432f", lag:0,     rel:0,     depth:1,    splash:.4, note:"the one everyone follows"},
+ {n:7, name:"seven",  side:+1, col:"#2f63a8", lag:0,     rel:0,     depth:1,    splash:.4, note:"long: reaches further (silent)"},
+ {n:6, name:"six",    side:-1, col:"#d9822b", lag:0,     rel:0,     depth:1.25, splash:.4, note:"pulls deep"},
+ {n:5, name:"five",   side:+1, col:"#2a8c8c", lag:.060,  rel:0,     depth:1,    splash:.6, note:"late"},
+ {n:4, name:"four",   side:-1, col:"#c49a1c", lag:0,     rel:0,     depth:1.05, splash:.4, note:"steady"},
+ {n:3, name:"three",  side:+1, col:"#4f9a3e", lag:0,     rel:-.07,  depth:.7,   splash:.4, note:"short: out early"},
+ {n:2, name:"two",    side:-1, col:"#c04f7a", lag:-.020, rel:0,     depth:1,    splash:.4, note:"a hair early"},
+ {n:1, name:"bow",    side:+1, col:"#7a52a8", lag:0,     rel:0,     depth:.95,  splash:1.6, note:"splashes going in"},
+];
+// geometry, metres: x toward the bow from stroke's pin, y toward starboard, z up from the water
+const SEAT_GAP = 1.42, SPREAD = .84, OUT = 2.30, CATCH = 55 * Math.PI / 180;
+function catchPos(s){ const x = (8 - s.n) * SEAT_GAP; return [x + OUT*Math.sin(CATCH), s.side*(SPREAD + OUT*Math.cos(CATCH)), 0]; }
+function gatePos(s){ const x = (8 - s.n) * SEAT_GAP; return [x, s.side*SPREAD, .25]; }
+const PLACES = {
+  cox:     {pos:[-1.6, 0, .8], face:[1, 0]},   // behind stroke, facing the bow
+  launch:  {pos:[5, 15, 1.2],  face:[0, -1]},  // out to starboard, abeam of four/five, facing the boat
+  nowhere: null,
+};
+function hear(place, p){
+  const L = PLACES[place];
+  if (!L) return {delay:0, gain:1, pan:0};
+  const d = [p[0]-L.pos[0], p[1]-L.pos[1], p[2]-L.pos[2]];
+  const r = Math.hypot(...d);
+  const right = [-L.face[1], L.face[0]];
+  const ref = place === "cox" ? 4 : 14;
+  return {delay: r / C, gain: Math.min(1.2, ref / r), pan: Math.max(-1, Math.min(1, (d[0]*right[0] + d[1]*right[1]) / r * 1.3))};
+}
+
+// ---------- sounds ----------
+let noiseBuf = null;
+function noise(ctx){
+  if (!noiseBuf){ noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const a = noiseBuf.getChannelData(0); for (let i=0;i<a.length;i++) a[i] = Math.random()*2-1; }
+  const n = ctx.createBufferSource(); n.buffer = noiseBuf; return n;
+}
+function env(ctx, t, peak, attack, decay){
+  const g = ctx.createGain(); g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(peak, t + attack);
+  g.gain.exponentialRampToValueAtTime(.0001, t + attack + decay); return g;
+}
+function voice(ctx, out, pan){ const p = ctx.createStereoPanner(); p.pan.value = pan; p.connect(out); return p; }
+function playCatch(ctx, out, t, s, h){
+  const v = voice(ctx, out, h.pan), k = h.gain;
+  // thump: the blade loading the water
+  const o = ctx.createOscillator(); o.type = "sine";
+  o.frequency.setValueAtTime(170 / s.depth, t); o.frequency.exponentialRampToValueAtTime(62 / s.depth, t + .07);
+  const g = env(ctx, t, .55 * k * Math.sqrt(s.depth), .004, .16 * s.depth); o.connect(g).connect(v); o.start(t); o.stop(t + .3);
+  // splash: water thrown up
+  const n = noise(ctx), f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 900 + 700*s.splash; f.Q.value = 1.1;
+  const g2 = env(ctx, t, .28 * k * (.6 + s.splash*.5), .002, .035 + .05*s.splash);
+  n.connect(f).connect(g2).connect(v); n.start(t, Math.random()*.5); n.stop(t + .25);
+  // a splashy catch throws drops that land a moment later
+  const drops = Math.round(s.splash > 1 ? 7 : s.splash * 2);
+  for (let i = 0; i < drops; i++){
+    const td = t + .05 + Math.random() * .22, od = ctx.createOscillator();
+    od.frequency.setValueAtTime(1800 + Math.random()*1600, td); od.frequency.exponentialRampToValueAtTime(900, td + .03);
+    const gd = env(ctx, td, .05 * k, .001, .03); od.connect(gd).connect(v); od.start(td); od.stop(td + .06);
+  }
+}
+function playRelease(ctx, out, t, s, h){
+  const v = voice(ctx, out, h.pan), k = h.gain;
+  const n = noise(ctx), f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 2600;
+  const g = env(ctx, t, .22 * k, .001, .012); n.connect(f).connect(g).connect(v); n.start(t, Math.random()*.5); n.stop(t + .05);
+  const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = 1150;
+  const g2 = env(ctx, t, .07 * k, .001, .03); o.connect(g2).connect(v); o.start(t); o.stop(t + .06);
+  // a little suck of water as the blade comes out
+  const n2 = noise(ctx), f2 = ctx.createBiquadFilter(); f2.type = "bandpass"; f2.frequency.value = 520; f2.Q.value = 2;
+  const g3 = env(ctx, t - .03, .07 * k, .02, .06); n2.connect(f2).connect(g3).connect(v); n2.start(t - .03, Math.random()*.5); n2.stop(t + .12);
+}
+function startRun(ctx, out){ // the hull running through the water, quickest mid-recovery
+  const n = noise(ctx); n.loop = true; const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 700;
+  const g = ctx.createGain(); g.gain.value = 0; n.connect(f).connect(g).connect(out); n.start(); return g;
+}
+
+// ---------- state ----------
+const state = {crew:"habits", where:"cox", slow:1, solo:null, mystery:null, guessed:false, score:[0,0]};
+function timing(s){ // returns offsets in seconds, crew time (before travel)
+  if (state.crew === "perfect") return {lag:0, rel:s.rel ? 0 : 0, depth:1, splash:.4};
+  if (state.crew === "mystery"){ const m = state.mystery; return {lag: m && m.n === s.n ? m.lag : 0, rel:0, depth:1, splash:.4}; }
+  return {lag:s.lag, rel:s.rel, depth:s.depth, splash:s.splash};
+}
+function arrival(s){ const h = hear(state.where, catchPos(s)); return timing(s).lag + h.delay; }
+
+// ---------- the ruler ----------
+const svg = document.getElementById("ruler"), NS = "http://www.w3.org/2000/svg";
+const X0 = 150, X1 = 640, MS0 = -40, MS1 = 100, ROW = 40, TOP = 64;
+const mx = ms => X0 + (ms - MS0) / (MS1 - MS0) * (X1 - X0);
+function el(tag, attrs, parent = svg){ const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+const dots = {}, rows = {};
+function drawRuler(){
+  svg.innerHTML = "";
+  const H = TOP + ROW * 8 + 10;
+  svg.setAttribute("viewBox", `0 0 900 ${H}`);
+  el("rect", {x: mx(-17), y: TOP - 14, width: mx(17) - mx(-17), height: ROW * 8 + 4, fill: "var(--band)"});
+  for (let ms = MS0; ms <= MS1; ms += 20){
+    el("line", {class: "tick", x1: mx(ms), x2: mx(ms), y1: TOP - 14, y2: TOP + ROW*8 - 10, "stroke-dasharray": ms === 0 ? "" : "1 4"});
+    el("text", {class: "lab", x: mx(ms), y: TOP - 22}).textContent = (ms > 0 ? "+" : "") + ms + (ms === MS1 ? " ms" : "");
+  }
+  el("text", {class: "lab", x: mx(30), y: 14, "font-style": "italic"}).textContent = "when each catch reaches you, against stroke's";
+  const t0 = arrival(SEATS[0]);
+  SEATS.forEach((s, i) => {
+    const y = TOP + i * ROW;
+    const g = el("g", {class: "row"}); rows[s.n] = g;
+    el("rect", {x: 0, y: y - ROW/2 + 2, width: 900, height: ROW - 2, fill: "transparent"}, g);
+    const nm = el("text", {class: "name", x: X0 - 22, y: y + 5, fill: s.col}, g); nm.textContent = s.name;
+    el("line", {x1: X0 - 12, x2: X1, y1: y, y2: y, stroke: "var(--line)", "stroke-width": .6}, g);
+    const hidden = state.crew === "mystery" && !state.guessed;
+    const ms = (arrival(s) - t0) * 1000;
+    const shown = hidden ? (hear(state.where, catchPos(s)).delay - hear(state.where, catchPos(SEATS[0])).delay) * 1000 : ms;
+    dots[s.n] = el("circle", {cx: mx(Math.max(MS0, Math.min(MS1, shown))), cy: y, r: 6, fill: s.col, opacity: (state.solo && state.solo !== s.n) ? .2 : .9}, g);
+    if (!hidden) el("text", {class: "ms", x: X1 + 12, y: y + 4}, g).textContent = (ms >= 0 ? "+" : "−") + Math.abs(ms).toFixed(0) + " ms";
+    const note = state.crew === "habits" ? s.note : (state.crew === "mystery" && state.guessed && state.mystery.n === s.n ? (state.mystery.lag > 0 ? "late" : "early") + " — this one" : "");
+    el("text", {class: "note", x: X1 + 72, y: y + 4}, g).textContent = note;
+    g.addEventListener("click", () => clickSeat(s.n));
+  });
+}
+function flash(n){ const d = dots[n]; if (!d) return; d.setAttribute("r", 10); setTimeout(() => d.setAttribute("r", 6), 120 * state.slow); }
+
+// ---------- playing ----------
+let ctx = null, master, runGain, timer = null, nextStroke = 0, strokeNo = 0;
+function scheduleStroke(t0){
+  const sl = state.slow;
+  SEATS.forEach(s => {
+    const tm = timing(s), jit = state.crew === "habits" ? (Math.random() - .5) * .008 : 0;
+    const audible = !state.solo || state.solo === s.n;
+    const hc = hear(state.where, catchPos(s)), hr = hear(state.where, gatePos(s));
+    const sv = {depth: tm.depth, splash: tm.splash};
+    const tc = t0 + (tm.lag + jit + hc.delay) * sl;
+    const tr = t0 + (DRIVE + tm.rel + tm.lag + hr.delay) * sl;
+    if (audible){ playCatch(ctx, master, tc, sv, hc); playRelease(ctx, master, tr, sv, hr); }
+    const wait = (tc - ctx.currentTime) * 1000;
+    setTimeout(() => flash(s.n), Math.max(0, wait));
+  });
+  // hull run: slowest just after the catch, quickest in mid-recovery
+  const g = runGain.gain, base = state.where === "launch" ? .02 : .035;
+  g.setValueAtTime(base * .5, t0 + .05 * sl);
+  g.linearRampToValueAtTime(base, t0 + (DRIVE + .35) * sl);
+  g.linearRampToValueAtTime(base * .5, t0 + T * sl);
+}
+function tick(){
+  while (nextStroke < ctx.currentTime + .4){
+    scheduleStroke(nextStroke); strokeNo++;
+    nextStroke += T * state.slow;
+  }
+}
+async function start(){
+  if (!ctx){
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = .9;
+    const comp = ctx.createDynamicsCompressor(); master.connect(comp).connect(ctx.destination);
+    runGain = startRun(ctx, master);
+  }
+  await ctx.resume();
+  nextStroke = ctx.currentTime + .15; timer = setInterval(tick, 50); tick();
+  playBtn.textContent = "stop"; playBtn.classList.add("on");
+}
+function stop(){ clearInterval(timer); timer = null; if (ctx) ctx.suspend(); playBtn.textContent = "listen"; playBtn.classList.remove("on"); }
+const playBtn = document.getElementById("play");
+playBtn.onclick = () => timer ? stop() : start();
+
+// ---------- controls ----------
+const status = document.getElementById("status");
+function newMystery(){
+  const pick = SEATS[1 + Math.floor(Math.random() * 7)];
+  const ms = [15, 25, 35, 50][Math.floor(Math.random() * 4)];
+  state.mystery = {n: pick.n, lag: (Math.random() < .5 ? -1 : 1) * ms / 1000};
+  state.guessed = false; state.solo = null;
+  status.innerHTML = "One seat is early or late by somewhere between 15 and 50 ms. Listen, then click the seat you think it is.";
+}
+function clickSeat(n){
+  if (state.crew === "mystery" && !state.guessed){
+    state.guessed = true; state.score[1]++;
+    const m = state.mystery, right = m.n === n; if (right) state.score[0]++;
+    const who = SEATS.find(s => s.n === m.n).name;
+    status.innerHTML = (right ? "<b>Yes.</b> " : "<b>No</b> — it was " + who + ". ") +
+      `${who} was ${Math.abs(m.lag*1000)} ms ${m.lag > 0 ? "late" : "early"}. ${state.score[0]} of ${state.score[1]} so far. <a href="#" id="again" style="color:inherit">Another</a>`;
+    document.getElementById("again").onclick = e => { e.preventDefault(); newMystery(); drawRuler(); };
+  } else {
+    state.solo = state.solo === n ? null : n;
+  }
+  drawRuler();
+}
+function group(id, key, after){
+  document.querySelectorAll(`#${id} button`).forEach(b => b.onclick = () => {
+    document.querySelectorAll(`#${id} button`).forEach(x => x.classList.toggle("on", x === b));
+    state[key] = key === "slow" ? +b.dataset.v : b.dataset.v;
+    if (after) after();
+    drawRuler();
+    if (timer && key === "slow"){ nextStroke = Math.max(nextStroke, ctx.currentTime + .1); }
+  });
+}
+group("crew", "crew", () => { state.solo = null; if (state.crew === "mystery") newMystery(); else status.textContent = ""; });
+group("where", "where");
+group("slow", "slow");
+drawRuler();
+window.__eight = {SEATS, hear, catchPos, gatePos, playCatch, playRelease, state, T, DRIVE, timing};
+</script>
+</body></html>
