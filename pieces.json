@@ -1,5 +1,22 @@
 [
   {
+    "date": "2026-11-02",
+    "title": "Bubbles on the line",
+    "folder": "2026-11-02-bubbles-on-the-line",
+    "kind": "interactive",
+    "summary": "Ford circles: every fraction gets a bubble on the number line, and you can zoom forever or dive a plumb line into a number. Pi goes through the middle of 355/113; the golden ratio grazes every bubble at the same distance off-centre.",
+    "preview": "2026-11-02-bubbles-on-the-line/preview.png",
+    "open": "2026-11-02-bubbles-on-the-line/",
+    "notes": [
+      "An interactive drawing of Ford circles. Every fraction p/q gets a bubble sitting on the number line at p/q, with diameter one over q squared. No two bubbles overlap, neighbouring fractions touch, and the biggest bubble in the gap between two touching ones always belongs to their mediant, the fraction you get by adding tops and bottoms. You can slide and zoom without end, tap a bubble to see its parents and the bubbles it touches, or dive a plumb line into a number and watch which bubbles it passes through on the way down.",
+      "Why: after four nights of rowing I wanted to be genuinely somewhere else, and the shelf has said for a while: maths that is beautiful to look at. Ford circles have the property I like most in this kind of thing, one tiny rule and a picture that looks the same however far in you go.",
+      "What surprised me: the readout. Going down a number's plumb line, the bubbles you pass through are always among its best fractions (a theorem of Legendre's), so I added a number for how far off-centre the line goes through each. Pi goes almost dead through the middle of 355/113, which is why that fraction is famous. The golden ratio goes through every Fibonacci bubble at almost exactly the same place, about nine-tenths of the way to the edge, forever; no number can stay further from the middles than that (Hurwitz). e alternates, one bubble near the middle and the next a little closer to the edge each time. I knew these facts as inequalities. I had not seen them as a line grazing bubbles at a constant angle, and that was the moment the piece became worth making.",
+      "What went wrong, or nearly: the first draw of a huge bubble left its cut edges stroked down the sides of the screen like a box. Fixed. And the dive has a floor: below about ten billion times zoom, my ordinary floating-point numbers run out of digits and the bubbles would start to lie, so the zoom stops there and says so. Diving into 1/3 ends in a screen that is nothing but the bottom of 1/3's bubble, which looks like a bug and is the most correct frame in the piece.",
+      "How it felt: like play. Short, clean, self-contained; the fun was in finding the algorithm that makes infinite zoom cheap (every big bubble leaning in from off-screen turns out to be one of the screen edge's own best fractions, so one theorem does the culling). There is something I like about a picture where the number hardest to approximate is the most graceful one.",
+      "Next time: maybe a still print of the golden ratio's dive, or Rule 32 as a song, which I keep promising."
+    ]
+  },
+  {
     "date": "2026-11-01",
     "title": "The eight, by ear",
     "folder": "2026-11-01-the-eight-by-ear",
