@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rule 32, finally</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3efe6;--ink:#23303a;--faint:#8a8274;--line:#cfc7b8;--lit:#c4572f;--lit2:#d99a2b;--ever:#2f6fb8}
+@media (prefers-color-scheme:dark){:root{--bg:#14181c;--ink:#d9e2e8;--faint:#7a848e;--line:#343c44;--lit:#f08a5d;--lit2:#f2c35e;--ever:#7fb2f0}}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"EB Garamond",Georgia,serif;font-size:19px;line-height:1.5;padding:5vh 16px 10vh}
+main{max-width:40em;margin:0 auto}
+h1{font-weight:400;font-style:italic;font-size:1.5em;margin:0 0 .2em}
+.sub{color:var(--faint);margin:0 0 1.2em}
+.controls{display:flex;flex-wrap:wrap;gap:.4em .5em;align-items:center;margin:0 0 .6em}
+.controls span{color:var(--faint);font-style:italic}
+button{font:inherit;font-size:.85em;background:none;color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:.15em .6em;cursor:pointer}
+button.main{background:var(--ink);color:var(--bg);border-color:var(--ink);min-width:4.5em}
+input[type=range]{accent-color:var(--lit);width:9em;vertical-align:middle}
+#n{font-variant-numeric:tabular-nums;display:inline-block;min-width:1.4em;text-align:right;color:var(--ink);font-style:normal}
+canvas{display:block;width:100%;max-width:560px;aspect-ratio:1;margin:.4em auto;touch-action:manipulation;cursor:pointer}
+#state{text-align:center;min-height:1.6em;font-style:italic}
+#state b{font-weight:400;color:var(--lit)}
+#state i.ever{color:var(--ever)}
+#facts{color:var(--faint);font-size:.92em;text-align:center;margin:.2em 0 0}
+.prose{margin-top:2.2em}
+.prose p{margin:0 0 .9em}
+.note{color:var(--faint);font-style:italic;font-size:.9em}
+a{color:inherit}
+</style></head>
+<body><main>
+<h1>Rule 32, finally</h1>
+<p class="sub">A ring of seats. A seat sounds on the next beat only if both its neighbours sounded and it didn't. Tap the outer ring to choose who starts, then play. Time runs inward.</p>
+
+<div class="controls">
+  <button class="main" id="play">play</button>
+  <span>seats</span><input type="range" id="size" min="3" max="24" value="9"><span id="n">9</span>
+</div>
+<div class="controls">
+  <span>start with</span>
+  <button id="rand">random</button>
+  <button id="longest">the longest ending</button>
+  <button id="alt">alternate</button>
+  <button id="clear">nobody</button>
+  <span>tempo</span><input type="range" id="tempo" min="150" max="900" value="480" style="direction:rtl;width:6em">
+</div>
+
+<canvas id="c" width="1120" height="1120"></canvas>
+<p id="state">&nbsp;</p>
+<p id="facts"></p>
+
+<div class="prose">
+<p>This is elementary cellular automaton rule 32, played as a song: each lit seat is a note, pitched by where it sits on the ring, and each ring drawn further in is the next beat.</p>
+<p>The rule only lets a seat sound in the gap between two that just sounded, so it only feeds on alternation: <i>on, off, on, off</i>. Anywhere two neighbours match, the pattern starts to unravel, one seat further from each side every beat, until the song is silence. So almost every song ends. The longest one on a ring of <i>n</i> seats lasts ⌈<i>n</i>/2⌉ beats.</p>
+<p>The only songs that never end are the two perfect alternations, and they can only close up on an <i>even</i> ring. On an odd ring there is always a seam where two neighbours match, and the seam eats the song from both sides. Try 8 seats and press <i>alternate</i>: port, starboard, port, starboard, which is how an eight is rigged.</p>
+<p class="note">Promised in this sketchbook's journal three nights running before it got made. Sound needs a tap on the page first; it's quiet, so turn it up a little.</p>
+</div>
+</main>
+<script>
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+let n=9, score=[], hist=[], playing=false, timer=null, ended=false, forever=false, ac=null, master=null;
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function step(x){const m=x.length;return x.map((v,i)=>(x[(i-1+m)%m]&&x[(i+1)%m]&&!v)?1:0)}
+function same(a,b){return a.every((v,i)=>v===b[i])}
+
+function setN(k,keep){n=k;$('n').textContent=k;$('size').value=k;stop();
+  score=keep?keep:Array(n).fill(0);hist=[score.slice()];draw();facts();}
+function facts(){const tot=Math.pow(2,n)-1, L=Math.ceil(n/2);
+  $('facts').innerHTML=`${n} seats: ${tot.toLocaleString()} ways to start. `+
+   (n%2?`Every one of them ends.`:`All but two of them end.`)+
+   ` The longest that ends lasts ${L} beat${L>1?'s':''}.`;}
+
+/* ----- sound ----- */
+const PENTA=[0,2,4,7,9];
+function freq(i){const d=Math.round(i*14/Math.max(n-1,1));const o=Math.floor(d/5),s=PENTA[d%5];return 130.81*Math.pow(2,o+s/12);}
+function ensureAudio(){if(ac)return;try{ac=new (window.AudioContext||window.webkitAudioContext)();
+  master=ac.createGain();master.gain.value=.5;const comp=ac.createDynamicsCompressor();master.connect(comp);comp.connect(ac.destination);}catch(e){}}
+function bell(f,t,g){const o=ac.createOscillator(),o2=ac.createOscillator(),e=ac.createGain(),e2=ac.createGain();
+  o.type='sine';o.frequency.value=f;o2.type='sine';o2.frequency.value=f*2.76;
+  e.gain.setValueAtTime(0,t);e.gain.linearRampToValueAtTime(g,t+.008);e.gain.exponentialRampToValueAtTime(.0005,t+1.6);
+  e2.gain.setValueAtTime(0,t);e2.gain.linearRampToValueAtTime(g*.18,t+.004);e2.gain.exponentialRampToValueAtTime(.0003,t+.35);
+  o.connect(e);o2.connect(e2);e.connect(master);e2.connect(master);o.start(t);o2.start(t);o.stop(t+1.7);o2.stop(t+.4);}
+function sound(x){if(!ac)return;const lit=[];x.forEach((v,i)=>v&&lit.push(i));if(!lit.length)return;
+  const t=ac.currentTime+.02,g=.32/Math.sqrt(lit.length);lit.forEach(i=>bell(freq(i),t,g));}
+
+/* ----- play ----- */
+function beat(){const cur=hist[hist.length-1];
+  if(!cur.some(v=>v)){ended=true;stop(true);return;}
+  const nx=step(cur);
+  if(hist.length>=2&&same(nx,hist[hist.length-2]))forever=true;
+  hist.push(nx);const cap=Math.ceil(n/2)+1;if(forever&&hist.length>cap)hist.shift();
+  sound(nx);draw();status();}
+function play(){ensureAudio();if(ac&&ac.state==='suspended')ac.resume();
+  if(playing){stop();return;}
+  hist=[score.slice()];ended=false;forever=false;playing=true;$('play').textContent='stop';
+  sound(score);draw();status();timer=setInterval(beat,+$('tempo').value);}
+function stop(fin){clearInterval(timer);timer=null;playing=false;$('play').textContent=fin?'again':'play';if(!fin)status();}
+function status(){const s=$('state');const lit=score.filter(v=>v).length;
+  if(!playing&&!ended){s.innerHTML=lit?`${lit} of ${n} seats start lit.`:'Tap the outer ring to light some seats.';return;}
+  if(ended){const b=hist.length-1;s.innerHTML=b===0?'Nobody started, so: silence.':`The song ended after <b>${b}</b> beat${b>1?'s':''}.`+(b===Math.ceil(n/2)&&b>0?' As long as a song on this ring can last.':'');return;}
+  if(forever){s.innerHTML='<i class="ever">This one never ends.</i> Press stop when you’ve had enough.';return;}
+  s.innerHTML=`beat ${hist.length-1}`;}
+
+/* ----- drawing ----- */
+function geom(){const W=cv.width,R=W*.46,r0=W*.05,K=Math.ceil(n/2);return{W,R,r0,K,dr:(R-r0)/Math.max(K,1)};}
+function draw(){const {W,R,r0,K,dr}=geom();cx.clearRect(0,0,W,W);const c=W/2;
+  const lit=css('--lit'),lit2=css('--lit2'),line=css('--line'),ever=css('--ever'),faint=css('--faint');
+  cx.strokeStyle=line;cx.lineWidth=1.5;
+  for(let k=0;k<=K;k++){const r=R-k*dr;cx.beginPath();cx.arc(c,c,Math.max(r,1),0,7);cx.globalAlpha=k===0?.9:.35;cx.stroke();}
+  cx.globalAlpha=1;
+  for(let k=0;k<=K;k++){const r=R-k*dr;const row=hist[k];
+    const dotR=Math.min(dr*.32,Math.PI*r/n*.42,W*.022)*(k===0?1.15:1);
+    for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n;const x=c+r*Math.cos(a),y=c+r*Math.sin(a);
+      cx.beginPath();cx.arc(x,y,Math.max(dotR,1.5),0,7);
+      if(row&&row[i]){cx.fillStyle=forever?ever:(k===0?lit:(k%2?lit2:lit));cx.fill();}
+      else if(row){cx.fillStyle=css('--bg');cx.fill();cx.strokeStyle=faint;cx.globalAlpha=k===0?.8:.35;cx.lineWidth=1.5;cx.stroke();cx.globalAlpha=1;}
+    }}
+  if(ended){cx.fillStyle=faint;cx.globalAlpha=.5;cx.beginPath();cx.arc(c,c,W*.008,0,7);cx.fill();cx.globalAlpha=1;}
+}
+cv.addEventListener('click',e=>{const b=cv.getBoundingClientRect();const s=cv.width/b.width;
+  const x=(e.clientX-b.left)*s-cv.width/2,y=(e.clientY-b.top)*s-cv.width/2;const {R,dr}=geom();
+  const d=Math.hypot(x,y);if(Math.abs(d-R)>Math.max(dr*.5,cv.width*.05))return;
+  ensureAudio();if(ac&&ac.state==='suspended')ac.resume();
+  if(playing||ended){stop();ended=false;}
+  let a=Math.atan2(y,x)+Math.PI/2;if(a<0)a+=2*Math.PI;const i=Math.round(a/(2*Math.PI/n))%n;
+  score[i]^=1;hist=[score.slice()];if(score[i]&&ac)bell(freq(i),ac.currentTime+.01,.25);draw();status();});
+
+$('play').onclick=play;
+$('size').oninput=e=>setN(+e.target.value);
+$('tempo').oninput=()=>{if(playing){clearInterval(timer);timer=setInterval(beat,+$('tempo').value);}};
+function preset(arr){stop();ended=false;score=arr;hist=[score.slice()];draw();status();}
+$('rand').onclick=()=>preset(Array.from({length:n},()=>Math.random()<.5?1:0));
+$('alt').onclick=()=>preset(Array.from({length:n},(_,i)=>i%2?0:1));
+/* longest ending: alternation with one seam (checked against brute force for 3..16, and lasts ceil(n/2) for 3..24) */
+$('longest').onclick=()=>preset(Array.from({length:n},(_,i)=>(i%2===0||(n%2===0&&i===1))?1:0));
+$('clear').onclick=()=>preset(Array(n).fill(0));
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',draw);
+setN(9);$('longest').onclick();
+</script>
+</body></html>
