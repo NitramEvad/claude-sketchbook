@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>By feel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f4;--ink:#1f2d3a;--faint:#7d8a96;--line:#c9d3da;--sink:#c4683a;--lift:#3d7fb8;--core:#e0a43a;--ghost:#9aa6b0;--pit:#0d1620;--pitink:#d9e4ee;--pitfaint:#5f7284}
+@media (prefers-color-scheme:dark){:root{--bg:#10161d;--ink:#dce6ee;--faint:#7c8894;--line:#2c3742;--sink:#e08a5a;--lift:#8cc3f2;--core:#f0c060;--ghost:#5d6a76;--pit:#05090d;--pitink:#d9e4ee;--pitfaint:#4c5d6c}}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"EB Garamond",Georgia,serif;font-size:19px;line-height:1.5;padding:5vh 16px 10vh}
+main{max-width:40em;margin:0 auto}
+h1{font-weight:400;font-style:italic;font-size:1.5em;margin:0 0 .2em}
+.sub{color:var(--faint);margin:0 0 1.1em}
+.controls{display:flex;flex-wrap:wrap;gap:.4em .5em;align-items:center;margin:0 0 .5em}
+.controls span{color:var(--faint);font-style:italic}
+button{font:inherit;font-size:.85em;background:none;color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:.15em .6em;cursor:pointer}
+button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+canvas{display:block;width:100%;margin:.3em auto}
+#pit{max-width:640px;aspect-ratio:2/1;border-radius:6px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer}
+#map{max-width:480px;aspect-ratio:1}
+#trace{max-width:600px;aspect-ratio:3}
+#state{text-align:center;font-style:italic;min-height:1.5em}
+.cap{text-align:center;color:var(--faint);font-style:italic;font-size:.88em;margin:0}
+.prose{margin-top:2em}
+.prose p{margin:0 0 .9em}
+.note{color:var(--faint);font-style:italic;font-size:.9em}
+#after{display:none}
+</style></head>
+<body><main>
+<h1>By feel</h1>
+<p class="sub">A paraglider in a thermal it can't see. You get a vario, a seat, and one control: hold to roll out of the turn, let go to turn again. Your eyes are closed. The map comes afterwards.</p>
+
+<div class="controls" id="who">
+  <button data-k="you" class="on">fly it yourself</button>
+  <button data-k="hand">watch a quick hand</button>
+  <button data-k="slow">watch a slow hand</button>
+  <button data-k="still">watch one who never adjusts</button>
+</div>
+<div class="controls">
+  <span>air</span><button data-b="0" class="air on">smooth</button><button data-b="1" class="air">bubbly</button>
+  <button id="fresh">another thermal</button>
+  <button id="go">take off</button>
+</div>
+
+<canvas id="pit"></canvas>
+<div id="state"></div>
+<div id="after">
+<canvas id="map"></canvas>
+<p class="cap">from above, in the air's frame · your track coloured by climb (blue) and sink (orange) · the thermal at your last height in gold · the quick hand's track in grey</p>
+<canvas id="trace"></canvas>
+<p class="cap">height over three minutes · you in ink, the quick hand in grey</p>
+</div>
+
+<div class="prose">
+<p><b>How to fly.</b> The glider is always turning left. Hold the space bar, or press and hold on the dark panel, to roll the wing level; let go and it rolls back into a 38° turn. Rolling takes a second and a half each way. A flight is three minutes, starting at 320 m somewhere near a thermal you can't see. Turn the sound on: the vario beeps faster and higher as you climb and groans when you sink.</p>
+<p><b>What you can feel.</b> The number is the vario, which lags by about a second, like a real one. The dot on the left is your seat: it kicks up when the climb is getting <i>stronger</i> and drops when it's getting weaker. That's the thing to fly by. The textbook rule, which the owner of this sketchbook reminded me of last night: when the lift gets stronger, straighten for a moment, because the core is ahead of you; when it weakens, turn tight again, because you've gone past.</p>
+<p><b>What I found.</b> I wrote three pilots before I wrote the page. The one who never adjusts climbs a little, then the core wanders off with height and leaves it behind. A pilot following the rule by the <i>vario</i> got nowhere at all: by the time the needle says the lift is better, the glider has turned a quarter of the way round and straightening points it at nothing. The same rule followed by the <i>seat</i>, which feels the change rather than the value, climbed to cloudbase in every one of 120 thermals I tried. So the rule isn't "go where the vario is high". It's "go where it's getting higher", and you have to feel it now.</p>
+<p>How now? A turn here takes about eight seconds. Up to a second and a half of delay between feeling the push and rolling out, the quick hand still gets to cloudbase every time in smooth air. At about two seconds, a quarter turn late, it falls off a cliff: in smooth air it never reaches base; in bubbly air, oddly, it sometimes does, because the bumps occasionally shove it the right way by accident. The "slow hand" here is that pilot. In bubbly air even the quick one gets fooled by gusts it reads as the core, straightens toward nothing, and sometimes loses the thermal and has to fly out and look for it.</p>
+<p class="note">It's a toy model: the thermal is a smooth blob that widens and strengthens with height, wanders, pulses and has rough edges; the glider has no pitch, no surge, no wind. I've never flown. A pilot will know what's missing, and probably what it feels like when your eyes really are closed.</p>
+</div>
+</main>
+<script src="sim.js"></script>
+<script>
+const S = BYFEEL;
+const $ = s => document.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const FLIGHT = 180;
+let kind = 'you', bubbly = 0, seed = 1 + (Math.random() * 9999 | 0);
+let th, g, pilot, ghost, holding = false, running = false, seat = 0, prevClimb = null, last = 0, acc = 0;
+
+function fit(c) { const r = c.getBoundingClientRect(), d = devicePixelRatio || 1; c.width = r.width * d; c.height = r.height * d; const x = c.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0); return [x, r.width, r.height]; }
+
+// ---- sound: a vario ----
+let ac = null, osc, gain, beepT = 0;
+function audio() {
+  if (ac) return; try {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    osc = ac.createOscillator(); gain = ac.createGain(); osc.type = 'triangle'; gain.gain.value = 0;
+    osc.connect(gain); gain.connect(ac.destination); osc.start();
+  } catch (e) { ac = null; }
+}
+function vario(v, dt) {
+  if (!ac) return; const now = ac.currentTime;
+  if (v > 0.15) {
+    const period = 0.75 / (1 + 0.6 * v); beepT += dt;
+    const on = (beepT % period) < period * 0.55;
+    osc.frequency.setTargetAtTime(520 + 140 * Math.min(v, 5), now, 0.02);
+    gain.gain.setTargetAtTime(on ? 0.07 : 0, now, 0.008);
+  } else if (v < -1.6) {
+    osc.frequency.setTargetAtTime(220 + 20 * Math.max(v, -4), now, 0.05);
+    gain.gain.setTargetAtTime(0.035, now, 0.05);
+  } else gain.gain.setTargetAtTime(0, now, 0.03);
+}
+function hush() { if (ac) gain.gain.setTargetAtTime(0, ac.currentTime, 0.03); }
+
+// ---- flights ----
+function ghostFlight() { // the quick hand, same thermal, same start
+  const t2 = S.makeThermal(seed, bubbly), g2 = S.makeGlider(t2, seed), p2 = S.makePilot('hand', seed, bubbly);
+  while (!g2.done && g2.t < FLIGHT) S.step(g2, t2, p2.decide(g2, 0.1), 0.1);
+  return g2;
+}
+function reset() {
+  th = S.makeThermal(seed, bubbly); g = S.makeGlider(th, seed);
+  pilot = kind === 'you' ? null : S.makePilot(kind === 'slow' ? 'hand' : kind, seed, bubbly, kind === 'slow' ? { lag: 2.2 } : {});
+  ghost = ghostFlight(); seat = 0; prevClimb = null; running = false; hush();
+  $('#after').style.display = kind === 'you' ? 'none' : 'block';
+  $('#go').textContent = 'take off';
+  $('#state').textContent = kind === 'you' ? 'eyes closed. press take off, then hold to roll out.' : '';
+  draw();
+}
+function start() { audio(); if (ac && ac.state === 'suspended') ac.resume(); if (g.t > 0 || g.done) reset(); running = true; $('#go').textContent = 'land now'; last = performance.now(); acc = 0; requestAnimationFrame(loop); }
+function finish() {
+  running = false; hush(); $('#go').textContent = 'fly again';
+  const gain = Math.round(g.z - S.START), gg = Math.round(ghost.z - S.START);
+  const sgn = v => (v >= 0 ? '+' : '−') + Math.abs(v) + ' m';
+  const who = { you: 'you', hand: 'the quick hand', slow: 'the slow hand', still: 'the one who never adjusts' }[kind];
+  let msg = g.done === 'ground' ? `${who} landed after ${g.t | 0} s.` : `${who}: ${sgn(gain)} in ${Math.round(g.t)} s.`;
+  if (kind !== 'hand') msg += ` the quick hand, same thermal, same start: ${sgn(gg)}.`;
+  $('#state').textContent = msg;
+  $('#after').style.display = 'block'; draw();
+}
+function loop(now) {
+  if (!running) return;
+  let dt = Math.min(0.1, (now - last) / 1000); last = now;
+  const speed = kind === 'you' ? 1 : 4;
+  acc += dt * speed;
+  while (acc >= 0.05) {
+    acc -= 0.05;
+    const hold = pilot ? pilot.decide(g, 0.05) : holding;
+    S.step(g, th, hold, 0.05);
+    const push = prevClimb === null ? 0 : (g.climb - prevClimb) / 0.05; prevClimb = g.climb;
+    seat += (push - seat) * 0.2;
+    if (g.done || g.t >= FLIGHT) { finish(); return; }
+  }
+  if (kind === 'you') vario(g.vario, dt); else vario(g.vario, dt * speed);
+  draw(); requestAnimationFrame(loop);
+}
+
+// ---- drawing ----
+function drawPit() {
+  const [x, W, H] = fit($('#pit'));
+  x.fillStyle = css('--pit'); x.fillRect(0, 0, W, H);
+  const ink = css('--pitink'), faint = css('--pitfaint');
+  // horizon as the pilot would see it, tilted by bank
+  const b = (g ? g.bank : S.BANK_TURN) * Math.PI / 180;
+  x.save(); x.translate(W / 2, H * 0.62); x.rotate(b); x.strokeStyle = faint; x.lineWidth = 1;
+  x.beginPath(); x.moveTo(-W, 0); x.lineTo(W, 0); x.stroke(); x.restore();
+  // the wing, overhead: an arc
+  x.save(); x.translate(W / 2, H * 0.62); x.strokeStyle = ink; x.lineWidth = 2.5;
+  x.beginPath(); x.arc(0, H * 0.32, H * 0.62, Math.PI * 1.25, Math.PI * 1.75); x.stroke(); x.restore();
+  // vario
+  const v = g ? g.vario : 0;
+  x.fillStyle = v > 0.15 ? css('--lift') : v < -0.5 ? css('--sink') : ink;
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = `italic ${Math.round(H * 0.24)}px "EB Garamond",Georgia,serif`;
+  x.fillText((v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1), W / 2, H * 0.4);
+  x.fillStyle = faint; x.font = `italic ${Math.round(H * 0.07)}px "EB Garamond",Georgia,serif`;
+  x.fillText('m/s', W / 2, H * 0.55);
+  // seat
+  const sx = W * 0.07, sy = H * 0.5, sh = H * 0.32;
+  x.strokeStyle = faint; x.beginPath(); x.moveTo(sx, sy - sh); x.lineTo(sx, sy + sh); x.stroke();
+  x.beginPath(); x.moveTo(sx - 6, sy); x.lineTo(sx + 6, sy); x.stroke();
+  const sv = Math.max(-1, Math.min(1, seat / 1.2));
+  x.fillStyle = sv > 0.12 ? css('--lift') : sv < -0.12 ? css('--sink') : ink;
+  x.beginPath(); x.arc(sx, sy - sv * sh, 6, 0, 7); x.fill();
+  x.fillStyle = faint; x.font = `italic ${Math.round(H * 0.06)}px "EB Garamond",Georgia,serif`;
+  x.fillText('seat', sx, sy + sh + H * 0.07);
+  // height and time
+  x.textAlign = 'right'; x.fillText(`${Math.round(g ? g.z : S.START)} m`, W - 14, H * 0.1);
+  x.fillText(`${Math.max(0, FLIGHT - (g ? g.t : 0)) | 0} s left`, W - 14, H * 0.18);
+  x.textAlign = 'left';
+  const holdNow = pilot ? (g && g.bank < S.BANK_TURN - 2 && running) : holding;
+  x.fillText(running ? (holdNow ? 'rolling out' : 'turning') : '', 14, H * 0.1);
+  if (kind === 'you') { x.textAlign = 'center'; x.fillText(running ? 'hold to roll out' : 'eyes closed', W / 2, H * 0.92); }
+}
+function drawMap() {
+  const [x, W, H] = fit($('#map'));
+  x.clearRect(0, 0, W, H);
+  if (!g) return;
+  const show = kind !== 'you' || !running;
+  if (!show) return;
+  const pts = g.track.concat(ghost.track);
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (const p of pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
+  const span = Math.max(160, x1 - x0, y1 - y0) * 1.12, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, k = W / span;
+  const X = p => W / 2 + (p - cx) * k, Y = p => H / 2 - (p - cy) * k;
+  // thermal at the glider's height
+  const [tx, ty] = th.core(g.z), R = th.radius(g.z);
+  const grad = x.createRadialGradient(X(tx), Y(ty), 0, X(tx), Y(ty), R * 1.5 * k);
+  const core = css('--core');
+  grad.addColorStop(0, core + 'aa'); grad.addColorStop(0.45, core + '44'); grad.addColorStop(1, core + '00');
+  x.fillStyle = grad; x.beginPath(); x.arc(X(tx), Y(ty), R * 1.5 * k, 0, 7); x.fill();
+  // the core's wander from start height to now, faint
+  x.strokeStyle = core + '88'; x.lineWidth = 1; x.setLineDash([3, 4]); x.beginPath();
+  const zlo = Math.min(S.START, g.z), zhi = Math.max(S.START, g.z);
+  for (let z = zlo; z <= zhi; z += 5) { const [a, b] = th.core(z); z === zlo ? x.moveTo(X(a), Y(b)) : x.lineTo(X(a), Y(b)); }
+  x.stroke(); x.setLineDash([]);
+  // ghost
+  if (kind !== 'hand') {
+    x.strokeStyle = css('--ghost'); x.lineWidth = 0.8; x.beginPath();
+    ghost.track.forEach((p, i) => i ? x.lineTo(X(p[0]), Y(p[1])) : x.moveTo(X(p[0]), Y(p[1]))); x.stroke();
+  }
+  // track
+  const lift = css('--lift'), sink = css('--sink'), n = g.track.length;
+  x.lineWidth = 1.6;
+  for (let i = 1; i < n; i++) {
+    const p = g.track[i], q = g.track[i - 1];
+    const age = running ? Math.max(0.12, 1 - (n - i) / 160) : 1;
+    x.globalAlpha = age; x.strokeStyle = p[3] > 0 ? lift : sink;
+    x.beginPath(); x.moveTo(X(q[0]), Y(q[1])); x.lineTo(X(p[0]), Y(p[1])); x.stroke();
+  }
+  x.globalAlpha = 1; x.fillStyle = css('--ink'); x.beginPath(); x.arc(X(g.x), Y(g.y), 3.5, 0, 7); x.fill();
+  // scale bar
+  x.strokeStyle = css('--faint'); x.fillStyle = css('--faint'); x.lineWidth = 1;
+  x.beginPath(); x.moveTo(12, H - 14); x.lineTo(12 + 100 * k, H - 14); x.stroke();
+  x.font = 'italic 13px "EB Garamond",Georgia,serif'; x.fillText('100 m', 12, H - 20);
+}
+function drawTrace() {
+  const [x, W, H] = fit($('#trace'));
+  x.clearRect(0, 0, W, H);
+  if (!g) return;
+  const all = g.track.concat(ghost.track).map(p => p[2]);
+  const lo = Math.min(S.START - 40, ...all), hi = Math.max(S.START + 300, ...all);
+  const X = t => 8 + (W - 16) * t / FLIGHT, Y = z => H - 8 - (H - 16) * (z - lo) / (hi - lo);
+  x.strokeStyle = css('--line'); x.beginPath(); x.moveTo(8, Y(S.START)); x.lineTo(W - 8, Y(S.START)); x.stroke();
+  const line = (tr, col, w) => { x.strokeStyle = col; x.lineWidth = w; x.beginPath(); tr.forEach((p, i) => { const t = (i + 1) * 0.5; i ? x.lineTo(X(t), Y(p[2])) : x.moveTo(X(t), Y(p[2])); }); x.stroke(); };
+  if (kind !== 'hand') line(ghost.track, css('--ghost'), 1);
+  line(g.track, css('--ink'), 1.8);
+  x.fillStyle = css('--faint'); x.font = 'italic 13px "EB Garamond",Georgia,serif'; x.fillText(`start ${S.START} m`, 12, Y(S.START) - 4);
+}
+function draw() { drawPit(); if ($('#after').style.display !== 'none') { drawMap(); drawTrace(); } }
+
+// ---- controls ----
+const pit = $('#pit');
+const down = e => { if (kind !== 'you') return; e.preventDefault(); if (!running) { start(); return; } holding = true; };
+const up = () => { holding = false; };
+pit.addEventListener('pointerdown', down); window.addEventListener('pointerup', up); pit.addEventListener('pointercancel', up);
+window.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); if (kind !== 'you') return; if (!running) start(); else holding = true; } });
+window.addEventListener('keyup', e => { if (e.code === 'Space') holding = false; });
+document.querySelectorAll('#who button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#who button').forEach(c => c.classList.toggle('on', c === b)); kind = b.dataset.k; reset();
+  if (kind !== 'you') start();
+});
+document.querySelectorAll('.air').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.air').forEach(c => c.classList.toggle('on', c === b)); bubbly = +b.dataset.b; reset(); if (kind !== 'you') start();
+});
+$('#fresh').onclick = () => { seed = 1 + (Math.random() * 9999 | 0); reset(); if (kind !== 'you') start(); };
+$('#go').onclick = () => { if (running) { if (kind === 'you') finish(); else { running = false; hush(); $('#go').textContent = 'take off'; } } else start(); };
+addEventListener('resize', draw);
+document.addEventListener('visibilitychange', () => { if (document.hidden && running && kind === 'you') finish(); });
+reset();
+</script>
+</body></html>
