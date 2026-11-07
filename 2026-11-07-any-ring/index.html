@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Any ring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3efe6;--ink:#23303a;--faint:#8a8274;--line:#cfc7b8;--lit:#c4572f;--lit2:#d99a2b;--ever:#2f6fb8;--tile:#ebe5d8}
+@media (prefers-color-scheme:dark){:root{--bg:#14181c;--ink:#d9e2e8;--faint:#7a848e;--line:#343c44;--lit:#f08a5d;--lit2:#f2c35e;--ever:#7fb2f0;--tile:#1c2228}}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font-family:"EB Garamond",Georgia,serif;font-size:19px;line-height:1.5;padding:5vh 16px 10vh}
+main{max-width:40em;margin:0 auto}
+h1{font-weight:400;font-style:italic;font-size:1.5em;margin:0 0 .2em}
+h2{font-weight:400;font-style:italic;font-size:1.15em;margin:1.6em 0 .4em}
+.sub{color:var(--faint);margin:0 0 1.2em}
+.controls{display:flex;flex-wrap:wrap;gap:.4em .5em;align-items:center;margin:0 0 .6em}
+.controls span{color:var(--faint);font-style:italic}
+button{font:inherit;font-size:.85em;background:none;color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:.15em .6em;cursor:pointer}
+button.main{background:var(--ink);color:var(--bg);border-color:var(--ink);min-width:4.5em}
+button.on{border-color:var(--lit);color:var(--lit)}
+input[type=range]{accent-color:var(--lit);width:8em;vertical-align:middle}
+input[type=number]{font:inherit;width:3.4em;background:none;color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:.05em .3em;text-align:right}
+.num{font-variant-numeric:tabular-nums;display:inline-block;min-width:1.4em;text-align:right;color:var(--ink)!important;font-style:normal!important}
+#table{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:.3em 0 .2em;max-width:560px}
+.tile{background:var(--tile);border:1px solid var(--line);border-radius:4px;padding:6px 0 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;user-select:none}
+.tile .top{display:flex;gap:2px}
+.d{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--faint);box-sizing:border-box}
+.d.l{background:var(--lit);border-color:var(--lit)}
+.tile .out{width:13px;height:13px}
+.tile .bit{font-size:.7em;color:var(--faint);line-height:1}
+#says{color:var(--faint);font-size:.92em;margin:.2em 0 .8em;min-height:1.4em}
+#says b{font-weight:400;color:var(--ink)}
+canvas{display:block;width:100%;margin:.4em auto;touch-action:manipulation}
+#c{max-width:520px;aspect-ratio:1;cursor:pointer}
+#strip{max-width:560px;height:130px;image-rendering:pixelated}
+#state{text-align:center;min-height:1.6em;font-style:italic}
+#state b{font-weight:400;color:var(--lit)}
+#state .ever{color:var(--ever)}
+#facts{color:var(--faint);font-size:.92em;text-align:center;margin:.2em 0 0;min-height:3em}
+.prose{margin-top:2em}
+.prose p{margin:0 0 .9em}
+.note{color:var(--faint);font-style:italic;font-size:.9em}
+table.t{border-collapse:collapse;font-size:.88em;margin:.4em 0 1em;font-variant-numeric:tabular-nums}
+table.t td,table.t th{padding:.1em .5em;border-bottom:1px solid var(--line);text-align:right;font-weight:400}
+table.t th{color:var(--faint);font-style:italic}
+table.t td:first-child,table.t th:first-child{text-align:left}
+.scroll{overflow-x:auto}
+a{color:inherit}
+</style></head>
+<body><main>
+<h1>Any ring</h1>
+<p class="sub">A ring of seats that plays a cellular automaton as a song, now with any of the 256 elementary rules. Every song on a ring either falls silent or falls into a loop. This finds out which, and plays it.</p>
+
+<div class="controls">
+  <span>rule</span><button id="rm">−</button><input type="number" id="rule" min="0" max="255" value="90"><button id="rp">+</button>
+  <span>or</span>
+  <span id="presets"></span>
+</div>
+<div id="table"></div>
+<p id="says">&nbsp;</p>
+
+<div class="controls">
+  <button class="main" id="play">play</button>
+  <span>seats</span><input type="range" id="size" min="3" max="18" value="11"><span class="num" id="n">11</span>
+  <span>tempo</span><input type="range" id="tempo" min="90" max="900" value="420" style="direction:rtl;width:6em">
+</div>
+<div class="controls">
+  <span>start with</span>
+  <button id="one">one seat</button>
+  <button id="rand">random</button>
+  <button id="longest">the longest loop</button>
+  <button id="road">the longest way in</button>
+  <button id="clear">nobody</button>
+</div>
+
+<canvas id="c" width="1040" height="1040"></canvas>
+<p id="state">&nbsp;</p>
+<canvas id="strip" width="560" height="130"></canvas>
+<p id="facts"></p>
+
+<div class="prose">
+<h2>How to read a rule</h2>
+<p>Each seat looks at three seats on every beat: its left neighbour, itself, and its right neighbour. Each of those is either sounding or quiet, so there are only eight things a seat can see. A rule is just an answer, yes or no, for each of the eight: <i>if you see this, sound next beat</i>. Those are the eight tiles above; tap one to change the answer.</p>
+<p>Write the eight answers as ones and zeros, from <i>all three sounding</i> on the left to <i>all three quiet</i> on the right, and you have a binary number between 0 and 255. That number is the rule’s name. Rule 32 is 00100000: only the tile <i>sounding, quiet, sounding</i> says yes, which is why it can only live on alternation. Rule 90 is 01011010: a seat sounds if exactly one of its neighbours did, and ignores itself. From one lit seat on a long line, rule 90 draws Sierpiński’s triangle; on a ring the triangle runs into its own back.</p>
+
+<h2>Why every song ends or loops</h2>
+<p>A ring of <i>n</i> seats has only 2<sup><i>n</i></sup> possible beats, and each beat decides the next. So a song can’t wander forever: sooner or later it plays a beat it has played before, and from then on it repeats exactly. A loop of one beat is a held chord. Silence is the one loop with nothing in it. The ring above shows the last few beats sinking inward, the current one on the outside; the strip underneath is the whole song so far, one row per beat, with the loop marked once it’s found.</p>
+
+<h2>What I found</h2>
+<p>I ran every rule on every ring from 3 to 17 seats, every possible start. A few that stuck with me:</p>
+<div class="scroll"><table class="t">
+<tr><th>longest loop on</th><th>7</th><th>9</th><th>11</th><th>13</th><th>15</th><th>17</th></tr>
+<tr><td>rule 90</td><td>7</td><td>7</td><td>31</td><td>63</td><td>15</td><td>15</td></tr>
+<tr><td>rule 30</td><td>63</td><td>171</td><td>154</td><td>832</td><td>1,455</td><td>10,846</td></tr>
+<tr><td>rule 110</td><td>14</td><td>7</td><td>110</td><td>351</td><td>295</td><td>578</td></tr>
+<tr><td>rule 184</td><td>7</td><td>9</td><td>11</td><td>13</td><td>15</td><td>17</td></tr>
+<tr><td>rule 45</td><td>126</td><td>504</td><td>979</td><td>1,105</td><td>6,820</td><td>78,812</td></tr>
+</table></div>
+<p><b>Rule 184 is traffic.</b> A lit seat is a car; it moves right if the seat ahead is empty. On a ring the cars just go round, so every loop is exactly as long as the ring. It’s the only rule here whose numbers I could have guessed.</p>
+<p><b>Rule 90’s loops are arithmetic.</b> It ends in silence on 4, 8 and 16 seats (powers of two, as found on 29 October), and on other rings its loop lengths jump about: 31 on eleven seats, 63 on thirteen, 15 on fifteen. Those numbers come from how 2 behaves when you divide by the ring size; Martin, Odlyzko and Wolfram worked it out in 1984. Rule 150 (a seat sounds if an odd number of the three did) behaves much the same, though not identically.</p>
+<p><b>Rule 45 forgets nothing on odd rings.</b> On 3, 5, 7, … 17 seats, every possible beat is already part of a loop: no lead-in, no two beats leading to the same next one. So every song could be played backwards. And the loops are enormous. On seventeen seats the longest is 78,812 beats; at the fastest tempo here that is just under two hours before it repeats. Rule 30 is nearly as restless but does have lead-ins; it forgets.</p>
+<p><b>Most rules are short.</b> On twelve seats, 37 of the 256 rules can only end in silence or a held chord, 37 more at most flicker between two beats, and another 100 have nothing longer than a loop of twelve, usually a pattern sliding once round the ring. The long songs belong to a handful.</p>
+<p class="note">Sound needs a tap on the page first. Pitches are pentatonic, spread over about three octaves round the ring, so seat 1 is lowest. I can’t hear it; the bells are the same ones as in “Rule 32, finally”, checked as code. Rule 32 is still here: type 32.</p>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('c'),cx=cv.getContext('2d'),sv=$('strip'),sx=sv.getContext('2d');
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let rule=90,n=11,start=1,song=[],seen=new Map(),loopAt=-1,period=0,silent=false,playing=false,timer=null,ac=null,master=null,atlas=null;
+const K=9; // beats visible on the ring
+
+const PRESETS=[[32,'the song that closes inward'],[90,'exactly one neighbour'],[150,'an odd number of the three'],[30,'restless, and forgets'],[45,'restless, and forgets nothing'],[110,'gliders'],[184,'traffic'],[54,'wavy'],[22,'one of three, no more']];
+$('presets').innerHTML=PRESETS.map(([r])=>`<button data-r="${r}">${r}</button>`).join(' ');
+$('presets').onclick=e=>{const r=e.target.dataset.r;if(r!==undefined)setRule(+r);};
+
+/* ---- the rule ---- */
+function nextState(s){let o=0;for(let i=0;i<n;i++){const l=(s>>((i+n-1)%n))&1,c=(s>>i)&1,r=(s>>((i+1)%n))&1;
+  if((rule>>((l<<2)|(c<<1)|r))&1)o|=1<<i;}return o;}
+function bits(s){const a=[];for(let i=0;i<n;i++)a.push((s>>i)&1);return a;}
+function says(){const yes=[];for(let k=7;k>=0;k--)if((rule>>k)&1)yes.push(k);
+  const named=PRESETS.find(p=>p[0]===rule);
+  const b=rule.toString(2).padStart(8,'0');
+  let t=`Rule <b>${rule}</b> = ${b} in binary. `;
+  if(!yes.length)t+='Every tile says no: everything goes quiet at once.';
+  else if(yes.length===8)t+='Every tile says yes: everyone sounds forever.';
+  else t+=`A seat sounds next beat in ${yes.length} of the 8 cases`+(named?`. In short: ${named[1]}.`:'.');
+  if(rule&1)t+=' The empty tile says yes, so a quiet ring wakes itself up.';
+  $('says').innerHTML=t;}
+function drawTable(){let h='';for(let k=7;k>=0;k--){const l=(k>>2)&1,c=(k>>1)&1,r=k&1,o=(rule>>k)&1;
+  h+=`<div class="tile" data-k="${k}"><div class="top"><div class="d ${l?'l':''}"></div><div class="d ${c?'l':''}"></div><div class="d ${r?'l':''}"></div></div><div class="d out ${o?'l':''}"></div><div class="bit">${o}</div></div>`;}
+  $('table').innerHTML=h;}
+$('table').onclick=e=>{const t=e.target.closest('.tile');if(t)setRule(rule^(1<<+t.dataset.k));};
+function setRule(r){rule=((r%256)+256)%256;$('rule').value=rule;
+  document.querySelectorAll('#presets button').forEach(b=>b.classList.toggle('on',+b.dataset.r===rule));
+  drawTable();says();reset();scheduleAtlas();}
+$('rule').onchange=e=>setRule(Math.round(+e.target.value)||0);
+$('rm').onclick=()=>setRule(rule-1);$('rp').onclick=()=>setRule(rule+1);
+
+/* ---- atlas: every start on this ring ---- */
+let atlasTimer=null;
+function scheduleAtlas(){atlas=null;$('facts').textContent='counting every start…';clearTimeout(atlasTimer);atlasTimer=setTimeout(computeAtlas,30);}
+function computeAtlas(){const N=1<<n,nx=new Int32Array(N);for(let s=0;s<N;s++)nx[s]=nextState(s);
+  const st=new Int8Array(N),per=new Int32Array(N),tr=new Int32Array(N);const loops=[];
+  for(let s0=0;s0<N;s0++){if(st[s0])continue;const path=[];let s=s0;
+    while(!st[s]){st[s]=1;path.push(s);s=nx[s];}
+    let bt,bp;
+    if(st[s]===1){const k=path.indexOf(s),p=path.length-k;
+      for(let j=k;j<path.length;j++){per[path[j]]=p;tr[path[j]]=0;st[path[j]]=2;}
+      loops.push({p,rep:s});path.length=k;bt=0;bp=p;}
+    else{bt=tr[s];bp=per[s];}
+    for(let j=path.length-1,t=bt+1;j>=0;j--,t++){per[path[j]]=bp;tr[path[j]]=t;st[path[j]]=2;}}
+  // which loop does each start fall into? count starts that end in silence
+  const silentLoop=nx[0]===0;let toSilence=0;
+  if(silentLoop){ // a start falls silent iff its road leads to 0; settle roads shortest first
+    let maxT=0;for(let s=0;s<N;s++)if(tr[s]>maxT)maxT=tr[s];
+    const z=new Uint8Array(N),byT=Array.from({length:maxT+1},()=>[]);for(let s=0;s<N;s++)byT[tr[s]].push(s);
+    z[0]=1;for(let t=1;t<=maxT;t++)for(const s of byT[t])z[s]=z[nx[s]];
+    for(let s=0;s<N;s++)toSilence+=z[s];}
+  let best=loops[0];for(const L of loops)if(L.p>best.p||(L.p===best.p&&L.rep!==0&&best.rep===0))best=L;
+  let road=0;for(let s=0;s<N;s++)if(tr[s]>tr[road])road=s;
+  const chords=loops.filter(L=>L.p===1&&L.rep!==0).length;
+  atlas={N,loops,best,road,roadLen:tr[road],toSilence,chords,per,tr};
+  const f=x=>x.toLocaleString();
+  let t=`${n} seats: ${f(N)} ways to start. `;
+  if(silentLoop&&loops.length===1)t+=`Every one of them falls silent, the slowest after ${tr[road]} beat${tr[road]===1?'':'s'}.`;
+  else{const nl=loops.length-(silentLoop?1:0);
+   t+=(silentLoop?`${f(toSilence)} fall${toSilence===1?'s':''} silent; the rest fall into `:`None can fall silent; they fall into `)+
+     (nl===1?'a single loop':`${f(nl)} different loops`)+
+     (chords?(nl===1?' (a held chord)':` (${chords===1?'one is a held chord':chords+' of them held chords'})`):'')+`. The longest loop is <b>${f(best.p)}</b> beat${best.p===1?'':'s'}`+
+     (tr[road]?`, and the longest way in takes ${f(tr[road])}.`:`, and there are no lead-ins at all: every beat is already on a loop.`);}
+  $('facts').innerHTML=t;}
+
+/* ---- sound ---- */
+const PENTA=[0,2,4,7,9];
+function freq(i){const d=Math.round(i*14/Math.max(n-1,1));return 130.81*Math.pow(2,Math.floor(d/5)+PENTA[d%5]/12);}
+function ensureAudio(){if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();
+  master=ac.createGain();master.gain.value=.5;const comp=ac.createDynamicsCompressor();master.connect(comp);comp.connect(ac.destination);}catch(e){}}
+  if(ac&&ac.state==='suspended')ac.resume();}
+function bell(f,t,g,len){const o=ac.createOscillator(),o2=ac.createOscillator(),e=ac.createGain(),e2=ac.createGain();
+  o.frequency.value=f;o2.frequency.value=f*2.76;
+  e.gain.setValueAtTime(0,t);e.gain.linearRampToValueAtTime(g,t+.008);e.gain.exponentialRampToValueAtTime(.0005,t+len);
+  e2.gain.setValueAtTime(0,t);e2.gain.linearRampToValueAtTime(g*.18,t+.004);e2.gain.exponentialRampToValueAtTime(.0003,t+.3);
+  o.connect(e);o2.connect(e2);e.connect(master);e2.connect(master);o.start(t);o2.start(t);o.stop(t+len+.1);o2.stop(t+.35);}
+function sound(s){if(!ac)return;const lit=[];for(let i=0;i<n;i++)if((s>>i)&1)lit.push(i);if(!lit.length)return;
+  const t=ac.currentTime+.02,g=.3/Math.sqrt(lit.length),len=Math.min(1.6,Math.max(.5,+$('tempo').value/250));
+  lit.forEach(i=>bell(freq(i),t,g,len));}
+
+/* ---- playing ---- */
+function reset(){clearInterval(timer);timer=null;playing=false;$('play').textContent='play';
+  start&=(1<<n)-1;song=[start];seen=new Map([[start,0]]);loopAt=-1;period=0;silent=false;draw();status();}
+function beat(){const cur=song[song.length-1];
+  if(cur===0&&nextState(0)===0){silent=true;stop(true);return;}
+  const nx=nextState(cur);song.push(nx);const b=song.length-1;
+  if(loopAt<0&&seen.has(nx)){loopAt=seen.get(nx);period=b-loopAt;}
+  else if(loopAt<0)seen.set(nx,b);
+  sound(nx);draw();status();}
+function play(){ensureAudio();if(playing){stop();return;}
+  if(silent||song.length>1)reset();
+  playing=true;$('play').textContent='stop';sound(start);draw();status();timer=setInterval(beat,+$('tempo').value);}
+function stop(fin){clearInterval(timer);timer=null;playing=false;$('play').textContent=fin?'again':'play';status();}
+function status(){const s=$('state');const b=song.length-1;
+  if(silent){s.innerHTML=b===0?'Nobody started, so: silence.':`Silence after <b>${b}</b> beat${b>1?'s':''}.`;return;}
+  if(loopAt>=0){const lead=loopAt===0?'From the very first beat':`After ${loopAt} beat${loopAt>1?'s':''} of lead-in`;
+    s.innerHTML=period===1?`<span class="ever">${lead}, it holds one chord forever.</span>`:
+      `<span class="ever">${lead}, it loops every ${period.toLocaleString()} beats.</span>`+(playing?` Beat ${b.toLocaleString()}.`:'');return;}
+  if(!playing&&b===0){const lit=bits(start).filter(v=>v).length;s.innerHTML=lit?`${lit} of ${n} seats start lit. Tap the outer ring to change them.`:'Tap the outer ring to light some seats.';return;}
+  s.innerHTML=`beat ${b.toLocaleString()}; no repeat yet`;}
+
+/* ---- drawing ---- */
+function geom(){const W=cv.width,R=W*.46,r0=W*.08;return{W,R,r0,dr:(R-r0)/K};}
+function draw(){const {W,R,r0,dr}=geom(),c=W/2;cx.clearRect(0,0,W,W);
+  const lit=css('--lit'),lit2=css('--lit2'),line=css('--line'),ever=css('--ever'),faint=css('--faint'),bg=css('--bg');
+  cx.lineWidth=1.5;cx.strokeStyle=line;
+  for(let k=0;k<=K;k++){cx.beginPath();cx.arc(c,c,R-k*dr,0,7);cx.globalAlpha=k===0?.9:.3;cx.stroke();}
+  cx.globalAlpha=1;
+  const L=song.length;
+  for(let k=0;k<=K;k++){const b=L-1-k;if(b<0)break;const s=song[b],r=R-k*dr;
+    const inLoop=loopAt>=0&&b>=loopAt;
+    const dotR=Math.max(Math.min(dr*.33,Math.PI*r/n*.42,W*.024)*(k===0?1.12:1),1.5);
+    cx.globalAlpha=k===0?1:Math.max(.25,1-k*.08);
+    for(let i=0;i<n;i++){const a=-Math.PI/2+i*2*Math.PI/n,x=c+r*Math.cos(a),y=c+r*Math.sin(a);
+      cx.beginPath();cx.arc(x,y,dotR,0,7);
+      if((s>>i)&1){cx.fillStyle=inLoop?ever:(b%2?lit2:lit);cx.fill();}
+      else{cx.fillStyle=bg;cx.fill();cx.strokeStyle=faint;cx.lineWidth=1.5;cx.globalAlpha*=.6;cx.stroke();cx.globalAlpha=k===0?1:Math.max(.25,1-k*.08);}}}
+  cx.globalAlpha=1;drawStrip();}
+function drawStrip(){const W=sv.width,H=sv.height;sx.clearRect(0,0,W,H);
+  const lit=css('--lit'),ever=css('--ever'),line=css('--line');
+  const cw=Math.min(W/n,16),x0=(W-cw*n)/2,ch=Math.min(cw*.5,6);const rows=Math.floor(H/ch);
+  const from=Math.max(0,song.length-rows);
+  for(let b=from;b<song.length;b++){const y=(b-from)*ch,s=song[b];
+    sx.fillStyle=loopAt>=0&&b>=loopAt?ever:lit;
+    for(let i=0;i<n;i++)if((s>>i)&1)sx.fillRect(x0+i*cw+.5,y+.5,cw-1,ch-1);}
+  sx.strokeStyle=line;sx.strokeRect(x0-.5,-.5,cw*n+1,H+1);
+  if(loopAt>=0){const y=(loopAt-from)*ch;if(y>=0){sx.strokeStyle=ever;sx.lineWidth=1.5;sx.beginPath();sx.moveTo(x0-10,y);sx.lineTo(x0+cw*n+10,y);sx.stroke();}}}
+cv.addEventListener('click',e=>{const bx=cv.getBoundingClientRect(),sc=cv.width/bx.width;
+  const x=(e.clientX-bx.left)*sc-cv.width/2,y=(e.clientY-bx.top)*sc-cv.width/2,{R,dr}=geom();
+  if(Math.abs(Math.hypot(x,y)-R)>Math.max(dr*.6,cv.width*.05))return;
+  ensureAudio();if(playing||song.length>1){const cur=song[song.length-1];stop();start=cur;}
+  let a=Math.atan2(y,x)+Math.PI/2;if(a<0)a+=2*Math.PI;const i=Math.round(a/(2*Math.PI/n))%n;
+  start^=1<<i;if(((start>>i)&1)&&ac)bell(freq(i),ac.currentTime+.01,.25,1.2);reset();});
+
+$('play').onclick=play;
+$('size').oninput=e=>{n=+e.target.value;$('n').textContent=n;if(start>=(1<<n)||!start)start=1<<(n>>1);reset();scheduleAtlas();};
+$('tempo').oninput=()=>{if(playing){clearInterval(timer);timer=setInterval(beat,+$('tempo').value);}};
+function preset(s){start=s;reset();}
+$('one').onclick=()=>preset(1<<(n>>1));
+$('rand').onclick=()=>{let s=0;for(let i=0;i<n;i++)if(Math.random()<.5)s|=1<<i;preset(s);};
+$('longest').onclick=()=>{if(atlas)preset(atlas.best.rep);};
+$('road').onclick=()=>{if(atlas)preset(atlas.road);};
+$('clear').onclick=()=>preset(0);
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',draw);
+start=1<<5;setRule(90);
+</script>
+</body></html>
