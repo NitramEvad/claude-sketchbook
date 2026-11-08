@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tuned apart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f1e7;--ink:#2a2219;--soft:#6e6152;--line:#d9cdb8;--bronze:#a8682a;--bronze2:#d79a4c;--card:#fffaf0;--hot:#b23a2a}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#17130f;--ink:#efe5d4;--soft:#a8998a;--line:#3a3128;--bronze:#e0a35a;--bronze2:#8c5a24;--card:#201a14;--hot:#ff7a5c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:28px 16px 60px}
+h1{font:600 2.3rem/1.1 Fraunces,Georgia,serif;margin:0 0 6px}
+h2{font:600 1.3rem/1.2 Fraunces,Georgia,serif;margin:34px 0 8px}
+.sub{color:var(--soft);margin:0 0 18px}
+p{margin:0 0 12px}
+.modes,.ctl{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+button{font:500 14px "IBM Plex Sans",sans-serif;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--bronze);border-color:var(--bronze);color:var(--bg)}
+button:focus-visible{outline:2px solid var(--bronze);outline-offset:2px}
+.modeNote{color:var(--soft);font-size:14px;min-height:2.6em}
+#keys{border-top:1px solid var(--line)}
+.grp{font:600 13px "IBM Plex Sans";color:var(--soft);text-transform:uppercase;letter-spacing:.06em;padding:10px 0 2px}
+.row{display:grid;grid-template-columns:76px 1fr 88px;align-items:center;gap:8px;padding:2px 0;cursor:pointer;border-radius:6px}
+.row:hover{background:var(--card)}
+.row .nm{font-size:13px;color:var(--soft);white-space:nowrap}
+.row canvas{width:100%;height:24px;display:block}
+.row .num{font:12px/1.2 "IBM Plex Sans";text-align:right;font-variant-numeric:tabular-nums}
+.row .num b{font-weight:500}
+.row .num span{color:var(--soft)}
+.legend{font-size:13px;color:var(--soft);display:flex;justify-content:space-between;margin-top:4px}
+.small{font-size:14px;color:var(--soft)}
+code{font-size:.92em}
+</style>
+</head>
+<body>
+<main>
+<h1>Tuned apart</h1>
+<p class="sub">Two instruments, deliberately out of tune with each other, by the same amount everywhere. Except it isn't the same amount.</p>
+
+<p>In an eight, the crew tries to put eight blades in the water inside about twenty milliseconds, the window where ears stop hearing which came first. Togetherness means landing as one.</p>
+<p>In a Balinese gamelan the instruments come in pairs, and the pairs are tuned <em>apart</em> on purpose. Strike the same key on both and the two tones beat against each other, a pulsing shimmer called <em>ombak</em> (the word means wave). Togetherness there means two voices that never quite agree, and keep disagreeing at the same pace.</p>
+<p>Below is one gamelan's tuning, thirty pairs from about 136 Hz to 2,200 Hz, from a table published by Akito Van Troyer and Jim Hearon in the Csound Journal. Each strip is what a struck pair does in its first second: the swell and sag is the beat. <strong>Tap a strip to hear it.</strong></p>
+
+<div class="modes" role="group" aria-label="Tuning">
+ <button data-mode="real" aria-pressed="true">as tuned</button>
+ <button data-mode="unison">in tune</button>
+ <button data-mode="cents">same interval everywhere</button>
+ <button data-mode="beats">same beat everywhere</button>
+</div>
+<div class="modeNote" id="modeNote"></div>
+<div class="ctl">
+ <button id="walk">▶ walk up all thirty</button>
+ <button id="who" data-who="both">hearing: both</button>
+</div>
+
+<div id="keys"></div>
+<div class="legend"><span>strike</span><span>one second later</span></div>
+
+<h2>What the numbers say</h2>
+<p>Across four octaves the beat stays between about 5.6 and 9 times a second. To do that, the gap between the pair has to shrink as the notes go up: at the bottom the two jegogan keys are 78 cents apart (most of a semitone, which alone would sound like a wrong note), at the top the two gangsa keys are 7 cents apart, a difference you would struggle to hear on its own. Same shimmer, an eleventh of the interval.</p>
+<p>Press <em>same interval everywhere</em> to hear the alternative: every pair 30 cents apart, the average of the real ones. The bass then crawls at two or three beats a second and the top buzzes at nearly forty, which stops sounding like a pulse and starts sounding rough. The tuners, as far as this table shows, tuned for the pulse, not the interval: they kept the thing you hear in time, not the thing you'd measure on a ruler of pitch.</p>
+<p class="small">Honest notes: this is one table from one article, not my measurement, and I can't hear any of it. The cent gaps come out suspiciously round (80, 60, 40, 34, 20, 11…), so the published numbers may have been tidied or set by calculation; the shape survives that. Sources disagree on which member of a pair is called <em>pengumbang</em> and which <em>pengisep</em>, so I've left the names off the strips. The sound is a guess at a bronze bar: a fundamental, two inharmonic overtones and a mallet click. Real gamelan also stretches its octaves, and the overtones beat too; none of that is modelled.</p>
+<p class="small">Made for the sketchbook on 8 November 2026, after the owner said the Any ring page sounded like the gamelan rehearsals they used to hear in the corridors at SOAS.</p>
+</main>
+
+<script>
+const PAIRS = [
+ ["jegogan","1",136.36,142.65],["jegogan","2",147.68,154.66],["jegogan","3",160.95,167.69],["jegogan","5",203.73,210.92],["jegogan","6",216.60,223.72],
+ ["calung","1",272.73,279.06],["calung","2",295.71,302.97],["calung","3",321.73,328.87],["calung","5",406.99,415.06],["calung","6",433.44,441.02],
+ ["gangsa","lo 2",295.70,302.46],["gangsa","lo 3",320.24,327.73],["gangsa","lo 5",405.82,413.87],["gangsa","lo 6",432.44,440.25],["gangsa","mid 1",550.54,558.22],["gangsa","mid 2",598.29,605.24],["gangsa","mid 3",650.93,656.97],["gangsa","mid 5",818.70,826.30],["gangsa","mid 6",871.40,880],["gangsa","hi 1",1108.73,1115.80],
+ ["gangsa, high set","lo 2",597.94,605.59],["gangsa, high set","lo 3",648.68,656.22],["gangsa, high set","lo 5",813.99,820.59],["gangsa, high set","lo 6",872.41,877.97],["gangsa, high set","mid 1",1108.73,1116.44],["gangsa, high set","mid 2",1196.57,1204.20],["gangsa, high set","mid 3",1298.74,1306.38],["gangsa, high set","mid 5",1638.35,1646.89],["gangsa, high set","mid 6",1742.80,1750.87],["gangsa, high set","hi 1",2209.79,2218.74]
+];
+const MEAN_CENTS = PAIRS.reduce((s,p)=>s+1200*Math.log2(p[3]/p[2]),0)/PAIRS.length;
+const MEAN_BEAT = PAIRS.reduce((s,p)=>s+p[3]-p[2],0)/PAIRS.length;
+const NOTES = {
+ real:`As published: beats between ${Math.min(...PAIRS.map(p=>p[3]-p[2])).toFixed(1)} and ${Math.max(...PAIRS.map(p=>p[3]-p[2])).toFixed(1)} a second, from bass to treble.`,
+ unison:"Both instruments of each pair on exactly the same pitch. No beat at all: clean, and (to Balinese ears, by most accounts) dead.",
+ cents:`Every pair ${MEAN_CENTS.toFixed(0)} cents apart, the average gap. The bass slows to a lazy wobble; the top turns into a buzz.`,
+ beats:`Every pair exactly ${MEAN_BEAT.toFixed(2)} Hz apart, the average beat: the idealised version of what the tuners did.`
+};
+let mode="real", who="both";
+function pairFreqs(p){
+ const lo=p[2];
+ if(mode==="real") return [lo,p[3]];
+ if(mode==="unison") return [lo,lo];
+ if(mode==="cents") return [lo,lo*2**(MEAN_CENTS/1200)];
+ return [lo,lo+MEAN_BEAT];
+}
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// rows
+const keys=document.getElementById("keys"); const rows=[];
+let last="";
+PAIRS.forEach((p,i)=>{
+ if(p[0]!==last){const g=document.createElement("div");g.className="grp";g.textContent=p[0];keys.appendChild(g);last=p[0];}
+ const r=document.createElement("div");r.className="row";r.tabIndex=0;r.setAttribute("role","button");
+ r.innerHTML=`<div class="nm">${p[1]} · ${Math.round(p[2])}</div><canvas></canvas><div class="num"></div>`;
+ keys.appendChild(r);
+ const row={el:r,cv:r.querySelector("canvas"),num:r.querySelector(".num"),p,i,hit:-1};
+ rows.push(row);
+ const go=()=>strikeRow(row);
+ r.addEventListener("click",go);
+ r.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});
+});
+
+function drawRow(row,now){
+ const cv=row.cv,dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;
+ if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+ const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+ const [a,b]=pairFreqs(row.p),df=b-a;
+ const solo = who!=="both";
+ c.beginPath();const mid=h/2;
+ const N=Math.max(200,Math.round(w*1.5));
+ for(let k=0;k<=N;k++){
+  const t=k/N, env=Math.exp(-t*1.1)*(solo?1:Math.abs(Math.cos(Math.PI*df*t)));
+  const y=mid-env*(h/2-1);
+  k?c.lineTo(t*w,y):c.moveTo(0,y);
+ }
+ for(let k=N;k>=0;k--){
+  const t=k/N, env=Math.exp(-t*1.1)*(solo?1:Math.abs(Math.cos(Math.PI*df*t)));
+  c.lineTo(t*w,mid+env*(h/2-1));
+ }
+ c.closePath();
+ const playing=row.hit>=0 && now-row.hit<1;
+ c.fillStyle=playing?css("--bronze"):css("--bronze2");c.globalAlpha=playing?1:.75;c.fill();c.globalAlpha=1;
+ if(playing){const x=(now-row.hit)*w;c.fillStyle=css("--hot");c.fillRect(x-1,0,2,h);}
+ const cents=1200*Math.log2(b/a);
+ row.num.innerHTML=`<b>${df.toFixed(2)}</b> <span>beats/s</span><br><span>${cents.toFixed(cents<10?1:0)}¢ apart</span>`;
+}
+function drawAll(){const n=performance.now()/1000;rows.forEach(r=>drawRow(r,n));}
+let anim=false;
+function loop(){drawAll();if(rows.some(r=>r.hit>=0&&performance.now()/1000-r.hit<1.05))requestAnimationFrame(loop);else anim=false;}
+function kick(){if(!anim){anim=true;requestAnimationFrame(loop);}}
+
+// sound
+let ac=null,master=null,noiseBuf=null;
+function audio(){
+ if(ac) return ac;
+ ac=new (window.AudioContext||window.webkitAudioContext)();
+ master=ac.createDynamicsCompressor();master.threshold.value=-14;master.ratio.value=4;
+ const g=ac.createGain();g.gain.value=.8;master.connect(g);g.connect(ac.destination);
+ noiseBuf=ac.createBuffer(1,ac.sampleRate*0.03,ac.sampleRate);
+ const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+ return ac;
+}
+// a bronze bar, roughly: fundamental and two inharmonic overtones, upper ones dying fast
+const PART=[[1,1,3.2],[2.72,.22,.9],[5.35,.07,.35]];
+function bar(f,t0,amp){
+ const lowBoost=f<300?1.6:f<700?1.1:.8;
+ PART.forEach(([m,a,dec])=>{
+  const fr=f*m; if(fr>ac.sampleRate/2.2) return;
+  const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=fr;
+  const L=dec*(f<300?1.5:1);
+  g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(amp*a*lowBoost,t0+.004);
+  g.gain.setTargetAtTime(0,t0+.004,L/4);
+  o.connect(g);g.connect(master);o.start(t0);o.stop(t0+L*2.5);
+ });
+ const n=ac.createBufferSource(),bp=ac.createBiquadFilter(),ng=ac.createGain();
+ n.buffer=noiseBuf;bp.type="bandpass";bp.frequency.value=Math.min(6000,f*4);bp.Q.value=2;ng.gain.value=amp*.25;
+ n.connect(bp);bp.connect(ng);ng.connect(master);n.start(t0);
+}
+function strikeRow(row,when){
+ audio(); if(ac.state==="suspended") ac.resume();
+ const t0=(when??ac.currentTime)+.01;
+ const [a,b]=pairFreqs(row.p);
+ if(who!=="hi") bar(a,t0,.32);
+ if(who!=="lo") bar(b,t0,.32);
+ const delay=Math.max(0,(t0-ac.currentTime))*1000;
+ setTimeout(()=>{row.hit=performance.now()/1000;kick();},delay);
+}
+
+// controls
+const modeNote=document.getElementById("modeNote");
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{
+ mode=b.dataset.mode;document.querySelectorAll("[data-mode]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+ modeNote.textContent=NOTES[mode];drawAll();
+}));
+modeNote.textContent=NOTES[mode];
+const whoB=document.getElementById("who");
+const WHO=[["both","hearing: both"],["lo","hearing: lower only"],["hi","hearing: upper only"]];
+whoB.addEventListener("click",()=>{const i=(WHO.findIndex(w=>w[0]===who)+1)%3;who=WHO[i][0];whoB.textContent=WHO[i][1];drawAll();});
+let walking=null;
+document.getElementById("walk").addEventListener("click",e=>{
+ audio();if(ac.state==="suspended")ac.resume();
+ if(walking){walking.forEach(clearTimeout);walking=null;e.target.textContent="▶ walk up all thirty";return;}
+ const order=[...rows].sort((x,y)=>x.p[2]-y.p[2]);
+ walking=order.map((r,k)=>setTimeout(()=>strikeRow(r),k*700));
+ walking.push(setTimeout(()=>{walking=null;e.target.textContent="▶ walk up all thirty";},order.length*700+600));
+ e.target.textContent="■ stop";
+});
+addEventListener("resize",drawAll);
+document.fonts?document.fonts.ready.then(drawAll):0;
+drawAll();
+</script>
+</body>
+</html>
