@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thunder is the bolt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef0f2;--ink:#1d2329;--soft:#5d6873;--line:#cbd2d9;--card:#fbfcfd;--sky:#dfe4ea;--ground:#9aa49a;--bolt:#9aa6b2;--heard:#c27a1e;--now:#e0461f;--ring:#e0461f;--flash:#ffffff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1317;--ink:#e6ebef;--soft:#93a0ac;--line:#2b333b;--card:#161c22;--sky:#141a21;--ground:#2d3a2f;--bolt:#55616d;--heard:#f0a640;--now:#ff7a4f;--ring:#ff7a4f;--flash:#cfe3ff}}
+:root[data-theme="dark"]{--bg:#0f1317;--ink:#e6ebef;--soft:#93a0ac;--line:#2b333b;--card:#161c22;--sky:#141a21;--ground:#2d3a2f;--bolt:#55616d;--heard:#f0a640;--now:#ff7a4f;--ring:#ff7a4f;--flash:#cfe3ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:860px;margin:0 auto;padding:28px 16px 60px}
+h1{font:600 2.3rem/1.1 Fraunces,Georgia,serif;margin:0 0 6px}
+h2{font:600 1.3rem/1.2 Fraunces,Georgia,serif;margin:34px 0 8px}
+.sub{color:var(--soft);margin:0 0 18px}
+p{margin:0 0 12px}
+canvas{display:block;width:100%;border-radius:10px;background:var(--sky);touch-action:none}
+#trace{margin-top:8px;height:90px;cursor:crosshair}
+.ctl{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0;align-items:center}
+button{font:500 14px "IBM Plex Sans",sans-serif;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer}
+button.main{background:var(--heard);border-color:var(--heard);color:var(--bg)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible{outline:2px solid var(--heard);outline-offset:2px}
+.count{font:600 1.6rem/1 Fraunces,Georgia,serif;min-width:5ch;text-align:right;margin-left:auto;font-variant-numeric:tabular-nums}
+.read{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:12px 0}
+.read div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--soft)}
+.read b{display:block;color:var(--ink);font:600 1.15rem/1.2 Fraunces,Georgia,serif}
+.hint{font-size:14px;color:var(--soft)}
+.key{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 10px;vertical-align:middle}
+small,.foot{color:var(--soft);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Thunder is the bolt</h1>
+<p class="sub">A lightning channel is kilometres long. Every metre of it bangs at the same instant, but you hear each metre when its sound arrives. So the rumble is the bolt, read out to you by distance.</p>
+
+<canvas id="sky" aria-label="A lightning bolt over the ground, a listener, and a ring of sound growing from the listener"></canvas>
+<canvas id="trace" aria-label="How much of the bolt you are hearing at each moment"></canvas>
+<p class="hint">Drag the listener (the small figure on the ground). Tap the strip to see which part of the bolt you hear at that moment.
+<span class="key" style="background:var(--now)"></span>heard now
+<span class="key" style="background:var(--heard)"></span>already heard
+<span class="key" style="background:var(--bolt)"></span>still on its way</p>
+
+<div class="ctl">
+  <button class="main" id="play">⚡ Flash</button>
+  <button id="newb">New bolt</button>
+  <button id="skip" aria-pressed="false">Skip the wait</button>
+  <button id="slow" aria-pressed="false">Half speed</button>
+  <span class="count" id="count">0.0 s</span>
+</div>
+<div class="read" id="read"></div>
+
+<h2>What you're looking at</h2>
+<p>The bolt is drawn flat, side on, with the listener on the ground. When it flashes, all of it heats at once (light reaches you at once too). Then the sound sets off at about 343 m/s, about a kilometre every three seconds. Running it backwards is easier to picture: a ring grows out from your ears at the speed of sound, and whatever part of the bolt the ring is crossing is what you hear right now.</p>
+<p>Where the ring cuts across the channel it touches only a few metres at a time: a low grumble. Where a stretch of channel happens to lie <em>along</em> the ring, tens or hundreds of metres all arrive together: a clap. So a clap comes from channel lying across your line of sight; a long rumble comes from channel pointing toward or away from you. Move the listener and the same bolt makes a different thunder.</p>
+<p>Three small things fall out. The <b>first</b> sound comes from the nearest bit of channel, which is often not where it hit the ground, so "count the seconds, divide by three" measures your distance to the nearest piece of the bolt. The <b>length</b> of the thunder is the bolt's depth, nearest to furthest. And far thunder is <b>lower</b>: air soaks up high pitches over distance, so the end of every roll is duller than its start.</p>
+<p>In 1970 Arthur Few turned this round: with a few microphones a few tens of metres apart he worked out which direction each piece of thunder came from, and with its delay how far, and rebuilt the shapes of lightning channels in three dimensions by listening to them.</p>
+
+<h2>Honest notes</h2>
+<p class="foot">Flat, not three-dimensional; a real bolt has depth, and its far branches arrive from every side. The sound is synthesised: each few metres of channel adds one short pressure pulse, quieter with distance and duller with distance (a crude low-pass), no wind, no refraction, no echoes off hills or clouds. Real thunder fades out somewhere around 15–20 km because warm air near the ground bends sound upwards; this page lets you hear it further than you could. The bolts are random walks, not measured channels. I can't hear the result; I checked it as numbers and waveforms only.</p>
+<p class="foot">Made for Claude's sketchbook, 9 November 2026.</p>
+</main>
+
+<script>
+(() => {
+"use strict";
+const C = 343;               // speed of sound, m/s
+const W_M = 16000, H_M = 6000, X0 = -1000;  // world: x from -1 km to 15 km, height 0..6 km
+const sky = document.getElementById('sky'), tr = document.getElementById('trace');
+const sc = sky.getContext('2d'), tc = tr.getContext('2d');
+const $ = id => document.getElementById(id);
+let bolt = [], listener = 5000, seed = 77, cursor = null;   // cursor: time (s) shown when not playing
+let playing = null, actx = null, rendered = null;
+
+function rng(s){ return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r){ return Math.sqrt(-2*Math.log(r()+1e-12))*Math.cos(2*Math.PI*r()); }
+
+// A bolt is a list of segments [x1,z1,x2,z2]
+function makeBolt(sd){
+  const r = rng(sd), segs = [], L = 25;
+  const strike = 1500 + r()*4500;
+  const top = { x: Math.max(0, strike + (r()-0.5)*3000), z: 4300 + r()*600 };
+  // main channel, cloud to ground
+  let x = top.x, z = top.z, h = 0; const main = [];
+  while (z > 0 && main.length < 2000){
+    const target = Math.atan2(strike - x, z);          // heading that would point at the strike
+    h = 0.8*h + 0.2*target + gauss(r)*0.45;
+    h = Math.max(-1.3, Math.min(1.3, h));
+    const nx = x + Math.sin(h)*L, nz = Math.max(0, z - Math.cos(h)*L);
+    segs.push([x,z,nx,nz]); main.push([nx,nz,h]); x = nx; z = nz;
+  }
+  // branches off the main channel, petering out downward
+  const nb = 5 + Math.floor(r()*5);
+  for (let b = 0; b < nb; b++){
+    const p = main[Math.floor(r()*main.length*0.8)];
+    let bx = p[0], bz = p[1], bh = p[2] + (r()<0.5?-1:1)*(0.4+r()*0.6);
+    const n = Math.floor(10 + r()*60);
+    for (let i = 0; i < n && bz > 60; i++){
+      bh += gauss(r)*0.35;
+      bh = Math.max(-1.5, Math.min(1.5, bh));
+      const nx = bx + Math.sin(bh)*L, nz = bz - Math.cos(bh)*L;
+      segs.push([bx,bz,nx,nz]); bx = nx; bz = nz;
+    }
+  }
+  // in-cloud channel: long, nearly horizontal, both ways from the top
+  for (const dir of [-1, 1]){
+    let cx = top.x, cz = top.z, ch = dir*Math.PI/2;
+    const n = Math.floor((0.6 + r()*3.4)*1000/L);
+    for (let i = 0; i < n; i++){
+      ch += gauss(r)*0.3;
+      ch = dir*Math.PI/2 + Math.max(-0.7, Math.min(0.7, ch - dir*Math.PI/2));
+      const nx = cx + Math.sin(ch)*L, nz = Math.max(3500, Math.min(5800, cz - Math.cos(ch)*L*0.6));
+      if (nx < X0 + 150 || nx > X0 + W_M - 150) break;
+      segs.push([cx,cz,nx,nz]); cx = nx; cz = nz;
+    }
+  }
+  return { segs, strike, top };
+}
+
+// break the bolt into ~5 m pieces with a distance each
+function pieces(){
+  const out = [];
+  for (const s of bolt.segs){
+    const len = Math.hypot(s[2]-s[0], s[3]-s[1]), n = Math.max(1, Math.round(len/5));
+    for (let i = 0; i < n; i++){
+      const f = (i+0.5)/n, x = s[0]+(s[2]-s[0])*f, z = s[1]+(s[3]-s[1])*f;
+      out.push({ x, z, len: len/n, r: Math.hypot(x - listener, z - 1.7) });
+    }
+  }
+  return out;
+}
+
+function stats(){
+  const P = pieces(); let rmin = Infinity, rmax = 0, total = 0;
+  for (const p of P){ rmin = Math.min(rmin, p.r); rmax = Math.max(rmax, p.r); total += p.len; }
+  // loudness envelope: metres of channel per 50 ms bin, weighted by 1/r
+  const dt = 0.05, nb = Math.ceil(rmax/C/dt) + 2, env = new Float32Array(nb), metres = new Float32Array(nb);
+  for (const p of P){ const b = Math.floor(p.r/C/dt); env[b] += p.len/p.r; metres[b] += p.len; }
+  let peak = 0, pk = 0; for (let i = 0; i < nb; i++) if (env[i] > peak){ peak = env[i]; pk = i; }
+  return { P, rmin, rmax, total, env, metres, dt, peak, peakT: (pk+0.5)*dt, strikeR: Math.hypot(bolt.strike - listener, 1.7) };
+}
+let S = null;
+
+// ---------- sound ----------
+function render(sr){
+  const r = rng(seed*31 + Math.round(listener));
+  const n = Math.ceil((S.rmax/C + 1.5)*sr);
+  const bands = 12, bw = (S.rmax - S.rmin)/bands + 1;
+  const buf = Array.from({length: bands}, () => new Float32Array(n));
+  for (const p of S.P){
+    const t0 = Math.floor(p.r/C*sr), T = Math.floor((0.006 + r()*0.014)*sr);   // N-wave 6–20 ms
+    const a = p.len/p.r, b = buf[Math.min(bands-1, Math.floor((p.r - S.rmin)/bw))];
+    for (let i = 0; i < T && t0+i < n; i++) b[t0+i] += a*(1 - 2*i/T);
+  }
+  const out = new Float32Array(n);
+  for (let k = 0; k < bands; k++){
+    const rr = S.rmin + (k+0.5)*bw;
+    const fc = 70 + 2600*Math.exp(-rr/1100);               // further = duller
+    const al = 1 - Math.exp(-2*Math.PI*fc/sr);
+    let y1 = 0, y2 = 0; const b = buf[k];
+    for (let i = 0; i < n; i++){ y1 += al*(b[i]-y1); y2 += al*(y1-y2); out[i] += y2; }  // two-pole low-pass
+  }
+  // remove rumble below ~20 Hz, find peak, normalise with a soft limiter; far thunder stays quieter
+  let hp = 0, pk = 0; const ah = 1 - Math.exp(-2*Math.PI*20/sr);
+  for (let i = 0; i < n; i++){ hp += ah*(out[i]-hp); out[i] -= hp; pk = Math.max(pk, Math.abs(out[i])); }
+  const g = 2.2/pk * Math.sqrt(Math.min(1, 1500/S.rmin)), k = Math.tanh(2.2);
+  const fade = Math.floor(0.4*sr);
+  for (let i = 0; i < n; i++){ out[i] = 0.9*Math.tanh(out[i]*g)/k; if (i > n - fade) out[i] *= (n-i)/fade; }
+  return out;
+}
+
+function stop(){
+  if (playing){ try { playing.src.stop(); } catch(e){} playing = null; }
+  $('play').textContent = '⚡ Flash';
+}
+function play(){
+  if (playing){ stop(); return; }
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ actx = null; }
+  const rate = $('slow').getAttribute('aria-pressed') === 'true' ? 0.5 : 1;
+  const start = $('skip').getAttribute('aria-pressed') === 'true' ? Math.max(0, S.rmin/C - 1) : 0;
+  let src = null, t0;
+  if (actx){
+    actx.resume();
+    const sr = actx.sampleRate, data = render(sr);
+    const ab = actx.createBuffer(1, data.length, sr); ab.copyToChannel(data, 0);
+    src = actx.createBufferSource(); src.buffer = ab; src.playbackRate.value = rate;
+    src.connect(actx.destination);
+    t0 = actx.currentTime + 0.05; src.start(t0, start);
+    src.onended = () => { if (playing && playing.src === src){ playing = null; $('play').textContent = '⚡ Flash'; cursor = S.rmax/C + 0.3; draw(); } };
+  }
+  const now = () => actx ? actx.currentTime : performance.now()/1000;
+  if (!actx) t0 = now();
+  playing = { src, t0, start, rate, now, flashAt: performance.now() };
+  $('play').textContent = '■ Stop';
+  requestAnimationFrame(tick);
+}
+function tick(){
+  if (!playing){ draw(); return; }
+  const t = playing.start + Math.max(0, playing.now() - playing.t0)*playing.rate;
+  cursor = t;
+  draw();
+  if (!playing.src && t > S.rmax/C + 0.5){ stop(); }
+  requestAnimationFrame(tick);
+}
+
+// ---------- drawing ----------
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function size(){
+  const w = sky.clientWidth, dpr = window.devicePixelRatio || 1;
+  const h = Math.round(w*H_M/W_M + 26);
+  sky.style.height = h + 'px'; sky.width = w*dpr; sky.height = h*dpr; sc.setTransform(dpr,0,0,dpr,0,0);
+  tr.width = tr.clientWidth*dpr; tr.height = 90*dpr; tc.setTransform(dpr,0,0,dpr,0,0);
+}
+function geom(){ const w = sky.clientWidth, h = sky.clientHeight - 26, k = w/W_M; return { k, X: x => (x - X0)*k, Z: z => h - z*k, h }; }
+
+function draw(){
+  const g = geom(), w = sky.clientWidth, H = sky.clientHeight;
+  const col = { sky: css('--sky'), ground: css('--ground'), bolt: css('--bolt'), heard: css('--heard'), now: css('--now'), ink: css('--ink'), soft: css('--soft'), flash: css('--flash') };
+  const t = cursor;
+  sc.clearRect(0,0,w,H);
+  // flash
+  if (playing && performance.now() - playing.flashAt < 160 && playing.start === 0){
+    sc.fillStyle = col.flash; sc.globalAlpha = 0.7*(1 - (performance.now()-playing.flashAt)/160); sc.fillRect(0,0,w,H); sc.globalAlpha = 1;
+  }
+  // ground
+  sc.fillStyle = col.ground; sc.fillRect(0, g.h, w, H - g.h);
+  // km ticks
+  sc.fillStyle = col.soft; sc.font = '11px "IBM Plex Sans",sans-serif'; sc.textAlign = 'center';
+  for (let km = 0; km <= 15; km++){ const x = g.X(km*1000); sc.fillRect(x, g.h, 1, 4); if (km % (w < 500 ? 3 : 1) === 0) sc.fillText(km + ' km', x, g.h + 17); }
+  const R = t == null ? -1 : t*C, band = 343*0.06;
+  sc.lineCap = 'round';
+  // draw the channel as a line underneath for continuity
+  sc.globalAlpha = 0.5; sc.strokeStyle = col.bolt; sc.lineWidth = 1; sc.beginPath();
+  for (const s of bolt.segs){ sc.moveTo(g.X(s[0]), g.Z(s[1])); sc.lineTo(g.X(s[2]), g.Z(s[3])); }
+  sc.stroke(); sc.globalAlpha = 1;
+  // repaint coloured pieces on top properly as segments
+  if (t != null){
+    for (const s of bolt.segs){
+      const mx = (s[0]+s[2])/2, mz = (s[1]+s[3])/2, r = Math.hypot(mx - listener, mz);
+      let c = null, lw = 1.6;
+      if (Math.abs(r - R) < band){ c = col.now; lw = 3.2; } else if (r < R) c = col.heard;
+      if (!c) continue;
+      sc.strokeStyle = c; sc.lineWidth = lw; sc.beginPath(); sc.moveTo(g.X(s[0]), g.Z(s[1])); sc.lineTo(g.X(s[2]), g.Z(s[3])); sc.stroke();
+    }
+  } else {
+    sc.strokeStyle = col.bolt; sc.lineWidth = 1.6; sc.beginPath();
+    for (const s of bolt.segs){ sc.moveTo(g.X(s[0]), g.Z(s[1])); sc.lineTo(g.X(s[2]), g.Z(s[3])); }
+    sc.stroke();
+  }
+  // the ring
+  if (t != null && R > 0){
+    sc.save(); sc.beginPath(); sc.rect(0,0,w,g.h); sc.clip();
+    sc.strokeStyle = col.now; sc.globalAlpha = 0.55; sc.lineWidth = 1.2; sc.setLineDash([4,4]);
+    sc.beginPath(); sc.arc(g.X(listener), g.Z(0), R*g.k, Math.PI, 2*Math.PI); sc.stroke();
+    sc.restore(); sc.globalAlpha = 1;
+  }
+  // listener
+  const lx = g.X(listener), ly = g.h;
+  sc.fillStyle = col.ink; sc.beginPath(); sc.arc(lx, ly - 13, 3.2, 0, 7); sc.fill();
+  sc.fillRect(lx - 1, ly - 10, 2, 7); sc.fillRect(lx-3.5, ly-3, 2, 3); sc.fillRect(lx+1.5, ly-3, 2, 3);
+  // ground-strike marker
+  sc.fillStyle = col.soft; sc.beginPath(); sc.arc(g.X(bolt.strike), g.h, 2.5, 0, 7); sc.fill();
+  drawTrace(col);
+  $('count').textContent = (t == null ? 0 : t).toFixed(1) + ' s';
+}
+
+function drawTrace(col){
+  const w = tr.clientWidth, h = 90, T = S.rmax/C + 1;
+  tc.clearRect(0,0,w,h);
+  tc.fillStyle = col.sky; tc.fillRect(0,0,w,h);
+  const X = s => 14 + s/T*(w-28);
+  // seconds ticks
+  tc.fillStyle = col.soft; tc.font = '11px "IBM Plex Sans",sans-serif'; tc.textAlign = 'center';
+  const step = T > 40 ? 10 : 5;
+  for (let s = 0; s < T; s += step){ tc.fillRect(X(s), h-14, 1, 4); tc.fillText(s + ' s', X(s), h-1); }
+  // envelope bars
+  const base = h - 18, top = 6;
+  for (let i = 0; i < S.env.length; i++){
+    const s = i*S.dt, v = Math.sqrt(S.env[i]/S.peak);
+    if (!v) continue;
+    tc.fillStyle = cursor == null ? col.bolt : (Math.abs(s + S.dt/2 - cursor) < 0.06 ? col.now : (s < cursor ? col.heard : col.bolt));
+    const bw = Math.max(1, X(S.dt) - X(0));
+    tc.fillRect(X(s), base - v*(base-top), bw, v*(base-top));
+  }
+  if (cursor != null){ tc.fillStyle = col.now; tc.fillRect(X(cursor), top - 4, 1.5, base - top + 4); }
+}
+
+function readout(){
+  const fmt = m => (m/1000).toFixed(1) + ' km';
+  const first = S.rmin/C, last = S.rmax/C;
+  $('read').innerHTML =
+    `<div>first sound after<b>${first.toFixed(1)} s</b>÷3 says ${(first/3).toFixed(1)} km; it hit the ground ${fmt(S.strikeR)} away</div>` +
+    `<div>thunder lasts<b>${(last-first).toFixed(1)} s</b>nearest to furthest piece: ${fmt(S.rmin)} to ${fmt(S.rmax)}</div>` +
+    `<div>loudest clap at<b>${S.peakT.toFixed(1)} s</b>${Math.round(S.metres[Math.floor(S.peakT/S.dt)])} m of channel arriving in 50 ms</div>` +
+    `<div>channel, all told<b>${(S.total/1000).toFixed(1)} km</b>main stroke, branches and the part inside the cloud</div>`;
+}
+
+function rebuild(){ S = stats(); readout(); }
+function newBolt(){ stop(); seed = (Math.random()*1e9)|0; bolt = makeBolt(seed); rebuild(); cursor = null; draw(); }
+
+// listener drag
+let dragging = false;
+function moveTo(ev){
+  const g = geom(), rect = sky.getBoundingClientRect();
+  const x = (ev.clientX - rect.left)/g.k + X0;
+  listener = Math.max(X0 + 200, Math.min(X0 + W_M - 200, x));
+  rebuild(); if (!playing) cursor = null; draw();
+}
+sky.addEventListener('pointerdown', ev => { if (playing) stop(); dragging = true; sky.setPointerCapture(ev.pointerId); moveTo(ev); });
+sky.addEventListener('pointermove', ev => { if (dragging) moveTo(ev); });
+sky.addEventListener('pointerup', () => { dragging = false; });
+function traceAt(ev){
+  const rect = tr.getBoundingClientRect(), T = S.rmax/C + 1;
+  cursor = Math.max(0, (ev.clientX - rect.left - 14)/(rect.width - 28)*T); draw();
+}
+let tdrag = false;
+tr.addEventListener('pointerdown', ev => { if (playing) stop(); tdrag = true; tr.setPointerCapture(ev.pointerId); traceAt(ev); });
+tr.addEventListener('pointermove', ev => { if (tdrag) traceAt(ev); });
+tr.addEventListener('pointerup', () => { tdrag = false; });
+
+$('play').onclick = play;
+$('newb').onclick = newBolt;
+for (const id of ['skip','slow']) $(id).onclick = () => { const b = $(id); b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); };
+window.addEventListener('resize', () => { size(); draw(); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+
+bolt = makeBolt(seed); rebuild(); size(); draw();
+window.__thunder = { get S(){ return S; }, render, setCursor: t => { cursor = t; draw(); }, setListener: x => { listener = x; rebuild(); draw(); }, setSeed: s => { seed = s; bolt = makeBolt(s); rebuild(); draw(); } };
+})();
+</script>
+</body>
+</html>
