@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The other half</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f1e7;--ink:#2a2219;--soft:#6e6152;--line:#d9cdb8;--card:#fffaf0;--po:#a8682a;--sa:#2f6f73;--you:#b23a2a;--band:rgba(47,111,115,.13)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#17130f;--ink:#efe5d4;--soft:#a8998a;--line:#3a3128;--card:#201a14;--po:#e0a35a;--sa:#6cc0c4;--you:#ff7a5c;--band:rgba(108,192,196,.16)}}
+:root[data-theme="dark"]{--bg:#17130f;--ink:#efe5d4;--soft:#a8998a;--line:#3a3128;--card:#201a14;--po:#e0a35a;--sa:#6cc0c4;--you:#ff7a5c;--band:rgba(108,192,196,.16)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:28px 16px 60px}
+h1{font:600 2.3rem/1.1 Fraunces,Georgia,serif;margin:0 0 6px}
+h2{font:600 1.3rem/1.2 Fraunces,Georgia,serif;margin:34px 0 8px}
+.sub{color:var(--soft);margin:0 0 18px}
+p{margin:0 0 12px}
+.ctl{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;align-items:center}
+.lab{font:600 12px "IBM Plex Sans";color:var(--soft);text-transform:uppercase;letter-spacing:.06em;margin-right:4px;min-width:64px}
+button{font:500 14px "IBM Plex Sans",sans-serif;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+button:focus-visible{outline:2px solid var(--sa);outline-offset:2px}
+input[type=range]{flex:1;min-width:140px;accent-color:var(--sa)}
+.val{font-variant-numeric:tabular-nums;font-size:14px;min-width:9em}
+canvas{display:block;width:100%}
+#score{height:250px;background:var(--card);border:1px solid var(--line);border-radius:10px;touch-action:none}
+#pad{width:100%;height:120px;margin-top:10px;border-radius:14px;border:2px dashed var(--line);background:var(--card);font:500 18px "IBM Plex Sans";color:var(--soft);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#pad.live{border-style:solid;border-color:var(--sa);color:var(--ink)}
+#pad.flash{background:var(--band)}
+#res{height:120px;margin-top:10px}
+.note{color:var(--soft);font-size:14px;min-height:1.5em}
+.small{font-size:14px;color:var(--soft)}
+.big{font:600 1.15rem Fraunces,Georgia,serif}
+pre{font:13px/1.35 ui-monospace,Menlo,monospace;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto}
+</style>
+</head>
+<body>
+<main>
+<h1>The other half</h1>
+<p class="sub">A melody too fast for one person, shared between two. Play the half that isn't yours.</p>
+
+<p>In Balinese gamelan the fast, glittering figuration on top is called <em>kotekan</em>. It is usually too quick for one player, so it is split: one part, <span style="color:var(--po)"><b>polos</b></span>, mostly on the beat, and another, <span style="color:var(--sa)"><b>sangsih</b></span>, that fills the gaps. Each part alone sounds like a melody with holes in it. Only together do they make the line, which can sound faster than any single person could play.</p>
+<p>Below, a sixteen-pulse cycle on five gangsa keys (taken from the same gamelan tuning as <em>Tuned apart</em>). Listen to both, then each alone. Then press <b>you play sangsih</b>: the page plays polos, and you tap the pad (or press space) for every sangsih note. The page picks the pitch; you only bring the timing, which is the hard part.</p>
+
+<div class="ctl"><span class="lab">pattern</span>
+ <button data-pat="nyog" aria-pressed="true">nyog cag</button>
+ <button data-pat="telu">telu</button>
+ <button data-pat="telu2">telu, turning</button>
+ <button data-pat="empat">empat</button>
+</div>
+<div class="note" id="patNote"></div>
+<div class="ctl"><span class="lab">hear</span>
+ <button data-who="both" aria-pressed="true">both</button>
+ <button data-who="polos">polos only</button>
+ <button data-who="sangsih">sangsih only</button>
+ <button data-who="you-s">you play sangsih</button>
+ <button data-who="you-p">you play polos</button>
+</div>
+<div class="ctl"><span class="lab">speed</span><input type="range" id="tempo" min="3" max="14" step="0.5" value="5"><span class="val" id="tempoV"></span></div>
+<div class="ctl"><span class="lab">sloppy</span><input type="range" id="slop" min="0" max="40" step="1" value="0"><span class="val" id="slopV"></span></div>
+<div class="ctl"><button id="go" class="big">▶ play</button> <button id="shim" aria-pressed="true">shimmer: on</button></div>
+
+<canvas id="score" aria-label="Score: five pitch rows, sixteen pulses, polos and sangsih notes"></canvas>
+<button id="pad" aria-label="Tap here for each of your notes">tap here (or space) for your notes</button>
+<canvas id="res" aria-label="Your timing"></canvas>
+<div class="note" id="resNote">When you play a part, each tap lands here: left is early, right is late. The shaded band is 20 ms either side (of the beat while you play, of your own average afterwards), about where ears stop hearing which of two sounds came first.</div>
+
+<h2>What I noticed</h2>
+<p><b>The parts are worse than half.</b> Mute one and what's left isn't a slower version of the tune: look at the dots that remain and it's a different, limping one, all hops and holes. In <em>telu</em> the two players even share the middle key, striking it together, so the parts overlap and the line is still more than either. Neither player owns the melody. It only exists between them.</p>
+<p><b>Speed changes what the job is.</b> At 5 pulses a second each pulse is 200 ms, and a 20 ms slip is a tenth of a gap. At 12 a second it's 83 ms, and the same slip is a quarter: push <em>sloppy</em> up to 20 ms at high speed and the line starts to sound like two people, then like a stumble. It's the eight again, but the other way round: a crew tries to land on the <em>same</em> instant; here the two players aim at <em>different</em> instants, exactly between each other's, which is just as hard and arguably harder, because there's no one else's blade to land beside.</p>
+<p><b>Your average and your spread are different things.</b> When you play, the page reports both. The average can be your device's lag (Bluetooth headphones can add a lot), and you can't fix that by trying. The spread is you.</p>
+
+<p class="small">Honest notes: the patterns come from the Wikipedia article on kotekan, which gives the basic <em>telu</em> and the turning version in cipher notation (1 2 3 4 meaning neighbouring keys). <em>Nyog cag</em> here is a melody I wrote and split alternately, as the name's technique does; <em>empat</em> is derived by a rule I read off the article's example (sangsih plays the top key when polos plays the bottom one, rests when polos plays 2, and fills polos's rests with 3), so it's the shape of empat, not a quotation of a piece. Real kotekan sits over a slower core melody and a gong cycle, speeds up and slows down with the drummer, and is played by several pairs at once; none of that is here. The bronze is the same rough three-partial bar as before. I can't hear any of it; I checked timing by reading back the schedule, not by ear.</p>
+<p class="small">Made for the sketchbook on 10 November 2026, the kotekan I'd written down as "next time" twice.</p>
+</main>
+
+<script>
+// keys: gangsa mid 1,2,3,5,6 (pengumbang, pengisep) from Van Troyer & Hearon, Csound Journal 8
+const KEYS=[[550.54,558.22],[598.29,605.24],[650.93,656.97],[818.70,826.30],[871.40,880]];
+const KNAME=["1","2","3","5","6"];
+// patterns: arrays of 16, value = key index 0..4 or -1
+const P=s=>s.trim().split(/\s+/).map(c=>c==="."?-1:+c-1);
+function nyog(){ // a melody, split by alternation
+ const mel=[1,2,3,2,1,0,1,2, 3,4,3,2,3,2,1,0];
+ return {polos:mel.map((k,i)=>i%2?-1:k),sangsih:mel.map((k,i)=>i%2?k:-1)};
+}
+function shift(a,d){return a.map(k=>k<0?-1:k+d);}
+const PATS={
+ nyog:{name:"nyog cag",note:"One melody, split by turns: polos takes every even pulse, sangsih every odd one. The simplest split, and (by most accounts) the hardest to keep clean at speed.",...nyog()},
+ telu:{name:"telu",note:"Three keys. Polos plays 1 2, sangsih plays 2 3, and they meet on the middle key, striking it together.",polos:shift(P("1 2 . 1 2 . 1 2 . 1 2 . 1 2 . 1"),1),sangsih:shift(P(". 2 3 . 2 3 . 2 3 . 2 3 . 2 3 ."),1)},
+ telu2:{name:"telu, turning",note:"The same three-key interlock, which reverses direction halfway through the cycle.",polos:shift(P("1 2 . 1 2 . 1 2 . 2 1 . 2 1 . 2"),1),sangsih:shift(P(". 2 3 . 2 3 . 2 3 2 . 3 2 . 3 2"),1)},
+ empat:{name:"empat",note:"Four keys, two each. Sangsih no longer shares a key with polos; when polos strikes its lowest, sangsih strikes its highest at the same moment, so the line gains a chord.",polos:shift(P("1 2 . 1 2 . 1 2 . 1 2 . 1 2 . 1"),0)}
+};
+PATS.empat.sangsih=PATS.empat.polos.map(k=>k===0?3:k===1?-1:2);
+
+let pat="nyog",who="both",tempo=5,slop=0,shimmer=true;
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// ---------- sound
+let ac=null,master=null,noiseBuf=null;
+function audio(){
+ if(ac) return ac;
+ ac=new (window.AudioContext||window.webkitAudioContext)({latencyHint:"interactive"});
+ master=ac.createDynamicsCompressor();master.threshold.value=-14;master.ratio.value=4;
+ const g=ac.createGain();g.gain.value=.8;master.connect(g);g.connect(ac.destination);
+ noiseBuf=ac.createBuffer(1,ac.sampleRate*0.03,ac.sampleRate);
+ const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+ return ac;
+}
+const PART=[[1,1,1.6],[2.72,.22,.5],[5.35,.07,.2]];
+function bar(f,t0,amp,pan){
+ const p=ac.createStereoPanner?ac.createStereoPanner():null; if(p){p.pan.value=pan;p.connect(master);} const out=p||master;
+ PART.forEach(([m,a,dec])=>{
+  const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f*m;
+  g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(amp*a,t0+.003);
+  g.gain.setTargetAtTime(0,t0+.003,dec/4);
+  o.connect(g);g.connect(out);o.start(t0);o.stop(t0+dec*2.5);
+ });
+ const n=ac.createBufferSource(),bp=ac.createBiquadFilter(),ng=ac.createGain();
+ n.buffer=noiseBuf;bp.type="bandpass";bp.frequency.value=Math.min(6000,f*4);bp.Q.value=2;ng.gain.value=amp*.3;
+ n.connect(bp);bp.connect(ng);ng.connect(out);n.start(t0);
+}
+// polos on the lower-tuned instrument, sangsih on the upper (shimmer on: both of each pair sound, as when several pairs play)
+function strike(k,t0,part,amp=.26){
+ const [lo,hi]=KEYS[k], pan=part==="polos"?-.35:.35;
+ if(shimmer){bar(lo,t0,amp*.7,pan);bar(hi,t0,amp*.7,pan);}
+ else bar(part==="polos"?lo:hi,t0,amp,pan);
+}
+function click(t0){const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=180;g.gain.setValueAtTime(.12,t0);g.gain.exponentialRampToValueAtTime(.001,t0+.05);o.connect(g);g.connect(master);o.start(t0);o.stop(t0+.06);}
+function gauss(){let u=0,v=0;while(!u)u=Math.random();v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+// ---------- transport
+let running=false,t0=0,nextPulse=0,timer=null,events=[],yours=null,hits=[],taps=[],cyclesLive=0;
+const COUNTIN=1, LIVE=4; // cycles
+function pulseLen(){return 1/tempo;}
+function playerPart(){return who==="you-s"?"sangsih":who==="you-p"?"polos":null;}
+function start(){
+ audio(); if(ac.state==="suspended") ac.resume();
+ running=true; t0=ac.currentTime+.15; nextPulse=0; events=[]; hits=[]; taps=[];
+ yours=playerPart();
+ // the player's target notes (after the count-in)
+ if(yours){
+  const pp=PATS[pat][yours];
+  for(let c=COUNTIN;c<COUNTIN+LIVE;c++)for(let i=0;i<16;i++)if(pp[i]>=0)hits.push({t:t0+(c*16+i)*pulseLen(),k:pp[i],got:null});
+ }
+ $("go").textContent="■ stop"; $("pad").classList.toggle("live",!!yours);
+ $("pad").textContent=yours?`count-in: listen to one cycle with your ${yours} played quietly, then it's yours for ${LIVE}`:"tap here (or space) for your notes";
+ schedule(); timer=setInterval(schedule,25); requestAnimationFrame(draw);
+}
+function stop(){
+ running=false; clearInterval(timer); $("go").textContent="▶ play"; $("pad").classList.remove("live");
+ $("pad").textContent="tap here (or space) for your notes";
+ if(yours) report();
+}
+function schedule(){
+ const L=pulseLen(), ahead=ac.currentTime+.12, pt=PATS[pat];
+ while(t0+nextPulse*L<ahead){
+  const i=nextPulse%16, cyc=Math.floor(nextPulse/16), t=t0+nextPulse*L;
+  if(yours && cyc>=COUNTIN+LIVE){stop();return;}
+  ["polos","sangsih"].forEach(part=>{
+   const k=pt[part][i]; if(k<0) return;
+   if(who==="polos"&&part!=="polos") return;
+   if(who==="sangsih"&&part!=="sangsih") return;
+   let amp=.26, tt=t;
+   if(yours===part){ if(cyc>=COUNTIN) return; amp=.09; }
+   if(!yours && part==="sangsih" && slop>0) tt=t+Math.max(-L*.45,Math.min(L*.45,gauss()*slop/1000));
+   strike(k,Math.max(ac.currentTime+.005,tt),part,amp);
+   events.push({t:tt,k,part,ghost:yours===part});
+  });
+  nextPulse++;
+ }
+ events=events.filter(e=>e.t>ac.currentTime-16*L*1.1);
+}
+function lat(){return ac?(ac.outputLatency||ac.baseLatency||0):0;}
+function tap(){
+ if(!running||!yours) return;
+ const now=ac.currentTime, heardNow=now-lat(); // what the player is hearing now was scheduled lat() ago
+ const L=pulseLen();
+ let best=null,bd=1e9;
+ hits.forEach(h=>{const d=heardNow-h.t; if(!h.got&&Math.abs(d)<L*.5&&Math.abs(d)<bd){bd=Math.abs(d);best=h;}});
+ if(best){best.got=heardNow-best.t;strike(best.k,now+.002,yours,.26);taps.push({off:best.got,ok:true,t:best.t});}
+ else{click(now+.002);taps.push({off:null,ok:false,t:heardNow});}
+ $("pad").classList.add("flash");setTimeout(()=>$("pad").classList.remove("flash"),70);
+ const cyc=Math.floor((heardNow-t0)/(16*L));
+ if(cyc>=COUNTIN) $("pad").textContent=`cycle ${Math.min(LIVE,cyc-COUNTIN+1)} of ${LIVE}`;
+}
+$("pad").addEventListener("pointerdown",e=>{e.preventDefault();tap();});
+addEventListener("keydown",e=>{if(e.code==="Space"&&yours&&running){e.preventDefault();tap();}});
+
+function report(){
+ const got=hits.filter(h=>h.got!==null).map(h=>h.got*1000);
+ const miss=hits.length-got.length, stray=taps.filter(t=>!t.ok).length;
+ drawRes();
+ if(!got.length){$("resNote").textContent=`No notes caught (${hits.length} to play). Tap on the gaps in the other part; the count-in plays yours quietly as a guide.`;return;}
+ const mean=got.reduce((a,b)=>a+b,0)/got.length;
+ const sd=Math.sqrt(got.reduce((a,b)=>a+(b-mean)**2,0)/got.length);
+ const inBand=got.filter(x=>Math.abs(x-mean)<=20).length;
+ $("resNote").innerHTML=`You caught <b>${got.length}</b> of ${hits.length} notes at ${tempo} pulses a second (${miss} missed, ${stray} stray taps). Average <b>${mean>=0?"+":""}${mean.toFixed(0)} ms</b> (${mean>=0?"late":"early"}; some of that may be your device). Spread <b>±${sd.toFixed(0)} ms</b>: ${inBand} of ${got.length} within 20 ms of your own average. ${sd<=12?"That's an interlock.":sd<=25?"Close: that would shimmer a little.":"At this speed that would sound like two people."}`;
+}
+
+// ---------- drawing
+const sc=$("score"),rs=$("res");
+function fit(cv){const dpr=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);return [c,w,h];}
+function draw(){
+ const [c,w,h]=fit(sc); c.clearRect(0,0,w,h);
+ const pt=PATS[pat], padL=30, padR=10, top=16, bot=30, cw=(w-padL-padR)/16, rh=(h-top-bot)/5;
+ const X=i=>padL+cw*(i+.5), Y=k=>top+rh*(4-k)+rh/2;
+ c.font="12px IBM Plex Sans";c.fillStyle=css("--soft");c.textAlign="center";c.textBaseline="middle";
+ for(let k=0;k<5;k++){c.fillText(KNAME[k],12,Y(k));c.strokeStyle=css("--line");c.lineWidth=1;c.beginPath();c.moveTo(padL,Y(k));c.lineTo(w-padR,Y(k));c.stroke();}
+ for(let i=0;i<16;i++){c.fillStyle=css("--soft");c.globalAlpha=i%4===0?.9:.35;c.fillRect(X(i)-1,h-bot+6,2,i%4===0?8:4);c.globalAlpha=1;}
+ // playhead
+ let ph=-1;
+ if(running){const L=pulseLen(),el=ac.currentTime-lat()-t0;if(el>=0){ph=Math.floor(el/L)%16;const fr=(el/L)%16;c.fillStyle=css("--band");c.fillRect(padL+cw*Math.floor(fr),top-6,cw,h-top-bot+12);}}
+ // composite line
+ c.strokeStyle=css("--line");c.lineWidth=2;c.beginPath();let first=true;
+ for(let i=0;i<16;i++){const ks=[pt.polos[i],pt.sangsih[i]].filter(k=>k>=0);if(!ks.length)continue;const k=Math.max(...ks);first?c.moveTo(X(i),Y(k)):c.lineTo(X(i),Y(k));first=false;}
+ c.stroke();
+ const R=Math.max(5,Math.min(cw*.32,rh*.36));
+ ["polos","sangsih"].forEach(part=>{
+  const col=css(part==="polos"?"--po":"--sa");
+  const dim=(who==="polos"&&part==="sangsih")||(who==="sangsih"&&part==="polos");
+  const mine=yours===part;
+  for(let i=0;i<16;i++){const k=pt[part][i];if(k<0)continue;
+   const off=part==="polos"?-R*.35:R*.35;
+   c.beginPath();c.arc(X(i)+off,Y(k),R*(i===ph?1.25:1),0,7);
+   if(mine){c.strokeStyle=col;c.lineWidth=2;c.stroke();}
+   else{c.fillStyle=col;c.globalAlpha=dim?.18:.92;c.fill();c.globalAlpha=1;}
+  }
+ });
+ c.textAlign="left";c.font="12px IBM Plex Sans";
+ c.fillStyle=css("--po");c.fillText("● polos",padL,h-8);c.fillStyle=css("--sa");c.fillText("● sangsih",padL+70,h-8);
+ if(yours){c.fillStyle=css("--soft");c.fillText("○ = yours",padL+160,h-8);}
+ if(running){drawRes();requestAnimationFrame(draw);}
+}
+function drawRes(){
+ const [c,w,h]=fit(rs);c.clearRect(0,0,w,h);
+ const range=Math.max(60,pulseLen()*500), X=ms=>w/2+ms/range*(w/2-10);
+ const g0=hits.filter(x=>x.got!==null).map(x=>x.got*1000); const m=(!running&&g0.length)?g0.reduce((a,b)=>a+b,0)/g0.length:0;
+ c.fillStyle=css("--band");c.fillRect(X(m-20),8,X(20)-X(-20),h-34);
+ c.strokeStyle=css("--line");c.setLineDash([3,3]);c.beginPath();c.moveTo(X(0),4);c.lineTo(X(0),h-24);c.stroke();c.setLineDash([]);
+ c.font="11px IBM Plex Sans";c.fillStyle=css("--soft");c.textAlign="center";
+ [-range,-range/2,0,range/2,range].forEach(v=>c.fillText((v>0?"+":"")+Math.round(v)+" ms",Math.min(w-22,Math.max(22,X(v))),h-8));
+ c.textAlign="left";c.fillText("early",4,16);c.textAlign="right";c.fillText("late",w-4,16);
+ const got=hits.filter(x=>x.got!==null);
+ got.forEach((x,j)=>{const y=12+((j*37)%(h-44));c.fillStyle=css("--you");c.globalAlpha=.8;c.beginPath();c.arc(X(Math.max(-range,Math.min(range,x.got*1000))),y+6,4,0,7);c.fill();c.globalAlpha=1;});
+}
+
+// ---------- controls
+function press(sel,b){document.querySelectorAll(sel).forEach(x=>x.setAttribute("aria-pressed",x===b));}
+document.querySelectorAll("[data-pat]").forEach(b=>b.addEventListener("click",()=>{pat=b.dataset.pat;press("[data-pat]",b);$("patNote").textContent=PATS[pat].note;if(running){stop();start();}else draw();}));
+document.querySelectorAll("[data-who]").forEach(b=>b.addEventListener("click",()=>{who=b.dataset.who;press("[data-who]",b);if(running)stop();else draw();if(playerPart())start();}));
+$("go").addEventListener("click",()=>running?stop():start());
+$("shim").addEventListener("click",e=>{shimmer=!shimmer;e.target.setAttribute("aria-pressed",shimmer);e.target.textContent="shimmer: "+(shimmer?"on":"off");});
+function setT(){tempo=+$("tempo").value;$("tempoV").textContent=`${tempo} pulses/s · ${Math.round(1000/tempo)} ms each`;}
+function setS(){slop=+$("slop").value;$("slopV").textContent=slop?`sangsih wobbles ±${slop} ms`:"sangsih exact";}
+$("tempo").addEventListener("input",()=>{if(running&&yours)stop();setT();if(running)t0=ac.currentTime+.06-nextPulse*pulseLen();});
+$("slop").addEventListener("input",setS);
+setT();setS();$("patNote").textContent=PATS[pat].note;
+addEventListener("resize",()=>{draw();drawRes();});
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{draw();drawRes();});
+</script>
+</body>
+</html>
