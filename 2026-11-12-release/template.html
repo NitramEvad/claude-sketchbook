@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Release</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#26231e; --grey:#7d776c; --rule:rgba(60,50,40,.18); --dot:#b5562e;
+          --c0:#e6d7bd; --c1:#dfe6ea; --c2:#e9eff5; --c3:#fbfbfa; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --ink:#e8e3d8; --grey:#9c968a; --rule:rgba(230,220,200,.2); --dot:#e08a5c;
+            --c0:#2a2119; --c1:#1f2730; --c2:#1d2836; --c3:#30333a; }
+  }
+  :root[data-theme="dark"] { --ink:#e8e3d8; --grey:#9c968a; --rule:rgba(230,220,200,.2); --dot:#e08a5c;
+            --c0:#2a2119; --c1:#1f2730; --c2:#1d2836; --c3:#30333a; }
+  html, body { background:var(--c0); }
+  body { margin:0; padding:4rem 16px 6rem; font-family:'Newsreader', Georgia, serif; color:var(--ink);
+         transition:background-color .4s linear; }
+  main { max-width:34rem; margin:0 auto; font-size:1.13rem; line-height:1.64; }
+  h1 { font-weight:400; font-size:3rem; margin:0; letter-spacing:-.01em; }
+  .sub { color:var(--grey); font-style:italic; margin:.3rem 0 3rem; }
+  h2 { font-weight:500; font-size:.8rem; letter-spacing:.16em; text-transform:uppercase; color:var(--grey);
+       margin:3.2rem 0 .8rem; font-variant-numeric:tabular-nums; }
+  p { margin:0 0 1rem; hyphens:auto; }
+  section:last-of-type p:last-child { margin-top:2rem; font-style:italic; }
+  .end { margin-top:4rem; padding-top:1rem; border-top:1px solid var(--rule); color:var(--grey); font-size:.92rem; }
+  /* altimeter */
+  #alt { position:fixed; right:18px; top:12vh; bottom:12vh; width:56px; pointer-events:none;
+         font-family:'Newsreader', Georgia, serif; color:var(--grey); font-size:.78rem; font-variant-numeric:tabular-nums; }
+  #alt .line { position:absolute; right:6px; top:0; bottom:0; border-right:1px solid var(--rule); }
+  #alt .tick { position:absolute; right:6px; width:6px; border-top:1px solid var(--rule); }
+  #alt .mark { position:absolute; right:2px; width:9px; height:9px; border-radius:50%; background:var(--dot);
+               transform:translateY(-50%); }
+  #alt .lab { position:absolute; right:18px; transform:translateY(-50%); text-align:right; white-space:nowrap; line-height:1.25; }
+  #alt .lab b { font-weight:500; color:var(--ink); }
+  @media (max-width: 860px) {
+    #alt { right:3px; width:10px; top:20vh; bottom:20vh; }
+    #alt .line, #alt .tick { right:4px; }
+    #alt .mark { right:0; width:7px; height:7px; }
+    #alt .lab { display:none; }
+  }
+</style>
+</head>
+<body>
+<main>
+<h1>Release</h1>
+<p class="sub">A short story, told by a thermal. About {{WORDS}} words: roughly as long to read as it takes to rise.</p>
+{{BODY}}
+<p class="end">A story, not a forecast: one ordinary fair-weather day, with round numbers. The air cools a degree per hundred metres as it rises (9.8&nbsp;°C per kilometre); cloud forms where its temperature meets its dew point, about 125&nbsp;metres up for every degree they started apart. Thermals often start only a degree or two warmer than the air around them. Written for <a href="../">Claude&rsquo;s sketchbook</a>, 12 November 2026.</p>
+</main>
+<div id="alt" aria-hidden="true"><div class="line"></div><div class="mark"></div><div class="lab"></div></div>
+<script>
+(function(){
+  var secs = [].slice.call(document.querySelectorAll('section'));
+  var alt = document.getElementById('alt'), mark = alt.querySelector('.mark'), lab = alt.querySelector('.lab');
+  var TOP = 1600;
+  [0, 500, 1000, 1400].forEach(function(h){
+    var t = document.createElement('div'); t.className = 'tick';
+    t.style.top = (100 - h / TOP * 100) + '%'; alt.appendChild(t);
+  });
+  // how much warmer than its surroundings, by height (story numbers)
+  var warm = [[0,1.5],[50,1.4],[200,1.0],[500,0.8],[700,0.7],[1000,0.5],[1380,0.3],[1400,1.0],[1450,0.8],[1560,0],[1600,0]];
+  function lerp(tab, x){
+    if (x <= tab[0][0]) return tab[0][1];
+    for (var i = 1; i < tab.length; i++) if (x <= tab[i][0]) {
+      var a = tab[i-1], b = tab[i], f = (x - a[0]) / (b[0] - a[0] || 1); return a[1] + f * (b[1] - a[1]); }
+    return tab[tab.length-1][1];
+  }
+  function mix(c1, c2, f){
+    var a = c1.match(/\w\w/g).map(function(s){return parseInt(s,16)}), b = c2.match(/\w\w/g).map(function(s){return parseInt(s,16)});
+    return 'rgb(' + a.map(function(v,i){return Math.round(v + f*(b[i]-v))}).join(',') + ')';
+  }
+  function update(){
+    var y = window.scrollY + window.innerHeight * 0.45, pts = [];
+    secs.forEach(function(s){ pts.push([s.offsetTop, +s.dataset.h]); });
+    var last = secs[secs.length-1]; pts.push([last.offsetTop + last.offsetHeight, 1600]);
+    var h = 0;
+    if (y > pts[0][0]) { h = 1600;
+      for (var i = 1; i < pts.length; i++) if (y <= pts[i][0]) {
+        var f = (y - pts[i-1][0]) / (pts[i][0] - pts[i-1][0]); h = pts[i-1][1] + f * (pts[i][1] - pts[i-1][1]); break; } }
+    var w = lerp(warm, h);
+    var shownH = Math.min(h, 1400), inCloud = h >= 1400;
+    mark.style.top = (100 - h / TOP * 100) + '%'; lab.style.top = mark.style.top;
+    lab.innerHTML = '<b>' + (h >= 1560 ? 'gone' : inCloud ? 'cloud' : Math.round(shownH / 10) * 10 + ' m') + '</b>' +
+      '<br>' + (w < 0.05 ? 'no warmer' : '+' + w.toFixed(1) + '°');
+    // ground -> sky -> cloud -> sky again
+    var cs = getComputedStyle(document.documentElement), c = function(n){ return cs.getPropertyValue(n).trim().slice(1); };
+    var col;
+    if (h < 700) col = mix(c('--c0'), c('--c1'), h / 700);
+    else if (h < 1400) col = mix(c('--c1'), c('--c2'), (h - 700) / 700);
+    else if (h < 1500) col = mix(c('--c2'), c('--c3'), (h - 1400) / 100);
+    else col = mix(c('--c3'), c('--c2'), (h - 1500) / 100);
+    document.body.style.backgroundColor = col; document.documentElement.style.backgroundColor = col;
+  }
+  window.addEventListener('scroll', update, {passive:true}); window.addEventListener('resize', update);
+  if (document.fonts) document.fonts.ready.then(update);
+  update();
+})();
+</script>
+</body>
+</html>
