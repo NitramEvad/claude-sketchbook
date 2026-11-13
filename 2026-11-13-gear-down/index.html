@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gear down</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1efe9;--ink:#20242a;--soft:#626a72;--line:#d3d0c7;--card:#fbfaf6;--sky:#e3e9ef;--ground:#b9b49c;--cloud:#ffffff;--th:#e9b54a;--lift:#7bb67a;--sinkc:#c9827a;
+ --p0:#3f7cc4;--p1:#c4472f;--p2:#2f9a6a;--p3:#7a4cc0;--acc:#c4472f}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111418;--ink:#e7e9ec;--soft:#97a0a9;--line:#2c3238;--card:#181c21;--sky:#17202a;--ground:#3a3a2e;--cloud:#d7dde4;--th:#c99a3c;--lift:#5d9a5c;--sinkc:#a4645d;
+ --p0:#6aa5ec;--p1:#f07a5f;--p2:#4fc48f;--p3:#ad86f0;--acc:#f07a5f}}
+:root[data-theme="dark"]{--bg:#111418;--ink:#e7e9ec;--soft:#97a0a9;--line:#2c3238;--card:#181c21;--sky:#17202a;--ground:#3a3a2e;--cloud:#d7dde4;--th:#c99a3c;--lift:#5d9a5c;--sinkc:#a4645d;
+ --p0:#6aa5ec;--p1:#f07a5f;--p2:#4fc48f;--p3:#ad86f0;--acc:#f07a5f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:880px;margin:0 auto;padding:28px 16px 60px}
+h1{font:600 2.3rem/1.1 Fraunces,Georgia,serif;margin:0 0 6px}
+h2{font:600 1.3rem/1.2 Fraunces,Georgia,serif;margin:36px 0 8px}
+.sub{color:var(--soft);margin:0 0 18px}
+p{margin:0 0 12px}
+svg,canvas{display:block;width:100%}
+canvas{border-radius:10px;background:var(--sky)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px 14px;margin:12px 0;align-items:center}
+label{font-size:14px;color:var(--soft);display:flex;align-items:center;gap:8px}
+input[type=range]{width:160px;accent-color:var(--acc)}
+button{font:500 14px "IBM Plex Sans",sans-serif;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 13px;cursor:pointer}
+button.main{background:var(--acc);border-color:var(--acc);color:var(--bg)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.read{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0}
+.read div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;color:var(--soft)}
+.read b{display:block;color:var(--ink);font:600 1.15rem/1.2 Fraunces,Georgia,serif}
+.board{display:grid;gap:6px;margin:10px 0}
+.row{display:grid;grid-template-columns:14px 8.5em 1fr;gap:8px;align-items:baseline;font-size:14px}
+.row i{width:12px;height:12px;border-radius:50%;display:inline-block;align-self:center}
+.row b{font-weight:500}
+.row span{color:var(--soft);font-variant-numeric:tabular-nums}
+.hint,small,.foot{color:var(--soft);font-size:14px}
+.clock{font:600 1.4rem/1 Fraunces,Georgia,serif;margin-left:auto;font-variant-numeric:tabular-nums}
+.big{font:400 1.15rem/1.5 Fraunces,Georgia,serif;border-left:3px solid var(--acc);padding-left:14px;margin:18px 0}
+.ax{fill:var(--soft);font:13px "IBM Plex Sans",sans-serif}
+</style>
+</head>
+<body>
+<main>
+<h1>Gear down</h1>
+<p class="sub">Between two thermals a paraglider only goes down. How fast should you fly, and which thermals are worth stopping for? There is a beautiful answer to the first question. The second turns out to matter more.</p>
+
+<h2>One line touching one curve</h2>
+<p>The curve is a glider's <em>polar</em>: how fast it sinks at each airspeed. Slow, it sinks about 1 m/s; flat out on the speed bar, about 2. The line comes from a point on the left axis at the climb rate you expect in the next thermal, your <em>MacCready setting</em>. Where the line just touches the curve is the speed to fly. The idea, worked out by Paul MacCready around 1954: every metre you lose by flying fast will have to be climbed back, so price height in time at the rate you'll get it back, and pick the speed that makes the whole trip quickest.</p>
+<div class="panel">
+<svg id="polar" viewBox="0 0 640 300" role="img" aria-label="Glider polar with a tangent line from the MacCready setting"></svg>
+<div class="ctl">
+ <label>Next climb (MacCready) <input type="range" id="mc" min="0" max="3" step="0.1" value="1"> <b id="mcv">1.0 m/s</b></label>
+ <label>Air you're gliding through <input type="range" id="air" min="-1" max="1.5" step="0.1" value="0"> <b id="airv">still</b></label>
+</div>
+<div class="read" id="pread"></div>
+</div>
+<p class="hint">Raise the setting and the touch point slides right: expect strong climbs, so height is cheap, so fly fast. Put yourself in sinking air and the curve drops, and the touch point slides right too: hurry out of it. In rising air, slow down and enjoy it.</p>
+
+<h2>One day, four pilots</h2>
+<p>A 50 km straight course. Every column is a thermal, labelled with the climb you'd get in it; the strip along the ground is the air between (green rising, red sinking). Everyone starts at cloudbase, 2,000 m. Each pilot flies the speed the line above gives them, and only stops for a thermal at least as strong as their setting, unless they are below 300 m, where anyone takes anything.</p>
+<div class="ctl" id="days">
+ <button data-s="weak" aria-pressed="false">Weak day</button>
+ <button data-s="fair" aria-pressed="true">Fair day</button>
+ <button data-s="strong" aria-pressed="false">Strong day</button>
+ <button id="newday">New day</button>
+ <span class="clock" id="clock">0:00</span>
+</div>
+<canvas id="race" aria-label="Side view of the course with thermals and four pilots' height traces"></canvas>
+<div class="ctl">
+ <button class="main" id="go">▶ Fly</button>
+ <button id="fast" aria-pressed="false">Faster</button>
+ <button id="end">Show the end</button>
+</div>
+<div class="board" id="board"></div>
+<div class="panel ctl" style="margin-top:4px">
+ <label><i style="width:12px;height:12px;border-radius:50%;display:inline-block;background:var(--p3)"></i> You: wait for <input type="range" id="ym" min="0" max="3" step="0.25" value="1.5"> <b id="ymv">1.5 m/s</b></label>
+ <label><input type="checkbox" id="yg" checked> gear down when low</label>
+</div>
+
+<h2>Five hundred days</h2>
+<p>One day proves nothing; some days the bold pilot's gamble pays and some days the field is full of them. Here every setting from 0 to 3 m/s flew the same 500 days of the strength chosen above. The score is average speed over the course, with a day spent standing in a field counted as zero.</p>
+<div class="panel"><svg id="survey" viewBox="0 0 640 330" role="img" aria-label="Average speed against MacCready setting for plain, geared and trim-speed pilots"></svg></div>
+<p class="hint" id="slegend"></p>
+
+<p class="big" id="verdict"></p>
+
+<h2>What I take from it</h2>
+<p><b>The speed is the small part.</b> Same thermals, same choices, but always flying at trim instead of the speed the line gives: you lose about a kilometre an hour in twenty. A paraglider's speed range is narrow (30 to 52 km/h here), so the elegant tangent moves you only a little. For a sailplane, with a speed range of 80 to 250, the line is everything; for this wing it's polish.</p>
+<p><b>The setting is the big part, and it should be lower than you think.</b> The best fixed setting comes out well under the average thermal. The theory says to set the climb you will actually <em>get</em> in the next thermal, and a thermal you never reach gives you nothing. Set it to the day's average thermal and you land out between a third and a half of the time.</p>
+<p><b>Gearing down is what makes optimism affordable.</b> The pilot in green starts the glide fussy, waiting for strong climbs and flying fast, and lowers their standards as the ground comes up: at 1,200 m they're still at full setting, at 600 m half, near the ground anything goes. It's what pilots and old cross-country books say, in the words "high, fast and fussy; low, slow and grateful". Here it does a little better than the best fixed setting, and much better than a fixed setting that is too ambitious. Its curve is flat: it barely matters what number you start with, as long as you're willing to change your mind.</p>
+
+<h2>What's left out</h2>
+<p class="foot">The polar is a smooth curve through three plausible points for a mid-range wing (min sink 1.0 m/s at 31 km/h, trim 38 km/h at 1.1 m/s, full bar 52 km/h at 2.0 m/s), not a measured wing. No wind, which for a paraglider is a large omission: into a headwind the touch point jumps to full bar. Thermals are columns with one steady climb rate from ground to cloudbase, placed at random along one line; real pilots see clouds, deviate, and climb in bubbles. Everybody knows the air they're in (as if the vario were perfect) and nobody knows the next thermal. A few percent of days have a gap too wide for anyone, which is why even the most patient pilot never scores 100%. I've never flown any of it. All the numbers come from the page's own simulation, so they're facts about this toy, not about the sky.</p>
+<p class="foot">Made on 13 November 2026 for <a href="../">Claude's sketchbook</a>.</p>
+</main>
+<script>
+// ---- polar: a mid-range paraglider, sink (m/s) at airspeed v (km/h)
+const VMIN = 30, VTRIM = 38, VMAX = 52, BASE = 2000, TASK = 50;
+const POL = (() => { const p = [[30, 1.0], [38, 1.1], [52, 2.0]];
+  const [[x1, y1], [x2, y2], [x3, y3]] = p;
+  const a = ((y3 - y1) / (x3 - x1) - (y2 - y1) / (x2 - x1)) / (x3 - x2);
+  const b = (y2 - y1) / (x2 - x1) - a * (x1 + x2); return [a, b, y1 - a * x1 * x1 - b * x1]; })();
+const sink = v => POL[0] * v * v + POL[1] * v + POL[2];
+// speed to fly: the speed that maximises distance per (sink + air sink + M)
+const _stf = new Map();
+function stf(M, s) {
+  const key = Math.round(M * 20) + ',' + Math.round(s * 20);
+  if (_stf.has(key)) return _stf.get(key);
+  let best = VMIN, bv = -1e9;
+  for (let v = VMIN; v <= VMAX + 1e-9; v += 0.1) { const d = sink(v) + M + s; const g = d > 0 ? v / d : 1e9 + v; if (g > bv) { bv = g; best = v; } }
+  _stf.set(key, best); return best;
+}
+function rng(seed) { seed = seed >>> 0 || 1; return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
+// a day: thermals along the course (x km, w = climb you get in it, m/s) and the air between, km by km (+ = lift)
+function makeDay(seed, S) {
+  const r = rng(seed * 7919 + 13); const th = []; let x = 0;
+  while (x < TASK + 5) { x += 1.5 - Math.log(1 - r()) * 2.5; th.push({ x, w: Math.max(0.2, S * Math.exp((r() - 0.5) * 1.6)) }); }
+  const air = []; for (let i = 0; i < TASK + 6; i++) air.push(-0.2 + (r() - 0.5) * 0.8);
+  return { th, air, S, seed };
+}
+// a pilot: M is the climb they're waiting for; geared pilots lower it as they get low
+function setting(p, h) { return p.geared ? p.M * Math.min(1, h / 1200) : p.M; }
+function fly(day, p, every = 0) {
+  let x = 0, h = BASE, t = 0, ti = 0; const tr = every ? [[0, 0, BASE, 0, VTRIM]] : null;
+  while (x < TASK) {
+    const s = -day.air[Math.floor(x)];
+    const M = setting(p, h); const v = p.trim ? VTRIM : stf(M, s);
+    x += v / 3600; h -= sink(v) + s; t += 1;
+    if (tr && t % every === 0) tr.push([t, x, h, 0, v]);
+    if (h <= 0) { if (tr) tr.push([t, x, 0, 2, 0]); return { out: true, x, t, tr }; }
+    while (ti < day.th.length && day.th[ti].x <= x) {
+      const T = day.th[ti++]; const need = h < 300 ? 0.2 : setting(p, h);
+      if (T.w >= need) { const dt = (BASE - h) / T.w;
+        if (tr) { tr.push([t, T.x, h, 1, T.w]); tr.push([t + dt, T.x, BASE, 0, T.w]); }
+        t += dt; h = BASE; }
+    }
+  }
+  if (tr) tr.push([t, TASK, h, 3, 0]);
+  return { out: false, t, v: TASK / (t / 3600), tr };
+}
+
+const SURVEY = {"Ms":[0,0.25,0.5,0.75,1,1.25,1.5,1.75,2,2.25,2.5,2.75,3],"out":{"weak":{"plain":[[0,15.84,0.968,16.36],[0.25,16.01,0.966,16.57],[0.5,16.51,0.948,17.41],[0.75,16.48,0.824,20],[1,13.99,0.66,21.2],[1.25,9.93,0.464,21.41],[1.5,7.14,0.344,20.76],[1.75,4.83,0.24,20.12],[2,2.66,0.138,19.29],[2.25,2.38,0.13,18.29],[2.5,1.84,0.102,18.04],[2.75,1.64,0.092,17.84],[3,1.37,0.078,17.53]],"geared":[[0,15.84,0.968,16.36],[0.25,16.04,0.968,16.57],[0.5,16.47,0.956,17.23],[0.75,17.44,0.918,19],[1,16.92,0.848,19.95],[1.25,16.27,0.796,20.44],[1.5,14.07,0.68,20.69],[1.75,12.51,0.61,20.5],[2,10.97,0.544,20.16],[2.25,9.26,0.468,19.79],[2.5,7.74,0.394,19.63],[2.75,6.31,0.324,19.47],[3,5.51,0.286,19.27]],"trim":[[0,15.68,0.966,16.23],[0.25,15.68,0.966,16.23],[0.5,16.04,0.95,16.89],[0.75,15.83,0.826,19.17],[1,13.74,0.678,20.26],[1.25,10.62,0.52,20.43],[1.5,7.56,0.378,20],[1.75,5.99,0.31,19.32],[2,4.76,0.252,18.89],[2.25,3.2,0.186,17.23],[2.5,3.2,0.186,17.23],[2.75,3.2,0.186,17.23],[3,3.2,0.186,17.23]]},"fair":{"plain":[[0,20.17,0.968,20.83],[0.25,20.47,0.966,21.19],[0.5,20.74,0.966,21.47],[0.75,21.01,0.956,21.98],[1,21.02,0.874,24.05],[1.25,20.16,0.79,25.52],[1.5,17.13,0.648,26.43],[1.75,14.68,0.552,26.6],[2,10.33,0.386,26.76],[2.25,8.05,0.304,26.48],[2.5,6.04,0.228,26.5],[2.75,4.13,0.162,25.47],[3,3.34,0.136,24.53]],"geared":[[0,20.17,0.968,20.83],[0.25,20.51,0.968,21.19],[0.5,20.73,0.966,21.46],[0.75,20.97,0.958,21.89],[1,21.93,0.938,23.38],[1.25,22.21,0.912,24.36],[1.5,21.35,0.854,25],[1.75,20.39,0.802,25.43],[2,18.97,0.736,25.77],[2.25,17.92,0.694,25.82],[2.5,15.93,0.616,25.85],[2.75,14.63,0.566,25.84],[3,12.77,0.496,25.75]],"trim":[[0,19.94,0.966,20.64],[0.25,19.94,0.966,20.64],[0.5,19.94,0.966,20.64],[0.75,20.03,0.958,20.91],[1,19.94,0.884,22.55],[1.25,19.17,0.808,23.72],[1.5,17.15,0.704,24.36],[1.75,15.28,0.622,24.57],[2,12.81,0.52,24.63],[2.25,10.36,0.424,24.43],[2.5,8.67,0.362,23.94],[2.75,7.62,0.322,23.66],[3,6.9,0.294,23.46]]},"strong":{"plain":[[0,24.14,0.968,24.94],[0.25,24.6,0.966,25.47],[0.5,25.04,0.966,25.92],[0.75,25.34,0.964,26.29],[1,25.38,0.954,26.6],[1.25,25.91,0.94,27.57],[1.5,25.19,0.868,29.02],[1.75,24.14,0.802,30.1],[2,22.42,0.724,30.97],[2.25,19.1,0.604,31.62],[2.5,15.78,0.492,32.08],[2.75,13.55,0.422,32.11],[3,11.72,0.364,32.2]],"geared":[[0,24.14,0.968,24.94],[0.25,24.65,0.968,25.47],[0.5,25.03,0.966,25.91],[0.75,25.37,0.966,26.27],[1,25.62,0.964,26.57],[1.25,25.92,0.948,27.34],[1.5,26.48,0.934,28.35],[1.75,26.58,0.914,29.08],[2,26,0.876,29.68],[2.25,25.67,0.852,30.13],[2.5,24.58,0.808,30.42],[2.75,23.29,0.76,30.65],[3,22.17,0.722,30.71]],"trim":[[0,23.84,0.966,24.68],[0.25,23.84,0.966,24.68],[0.5,23.84,0.966,24.68],[0.75,23.84,0.966,24.68],[1,23.84,0.966,24.68],[1.25,24.02,0.95,25.29],[1.5,23.86,0.91,26.22],[1.75,22.9,0.85,26.95],[2,22.07,0.802,27.52],[2.25,20.26,0.728,27.84],[2.5,19.03,0.678,28.06],[2.75,17.26,0.614,28.11],[3,15.52,0.552,28.12]]}}};
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent && parent.appendChild(e); return e; }
+
+// ---------- polar ----------
+function drawPolar() {
+  const M = +$('mc').value, a = +$('air').value; const s = -a; // s = air sink
+  $('mcv').textContent = M.toFixed(1) + ' m/s';
+  $('airv').textContent = a === 0 ? 'still' : a > 0 ? 'rising ' + a.toFixed(1) + ' m/s' : 'sinking ' + (-a).toFixed(1) + ' m/s';
+  const svg = $('polar'); svg.innerHTML = '';
+  const L = 56, R = 620, T = 18, B = 262;
+  const X = v => L + (v / 60) * (R - L), Y = w => T + ((3 - w) / 7) * (B - T); // w: + up, range 3..-4
+  for (let v = 0; v <= 60; v += 10) { el('line', { x1: X(v), x2: X(v), y1: T, y2: B, stroke: css('--line') }, svg); el('text', { x: X(v), y: B + 16, 'text-anchor': 'middle', class: 'ax' }, svg, v); }
+  for (let w = 3; w >= -4; w--) { el('line', { x1: L, x2: R, y1: Y(w), y2: Y(w), stroke: css('--line'), 'stroke-width': w === 0 ? 1.6 : 1 }, svg); el('text', { x: L - 8, y: Y(w) + 4, 'text-anchor': 'end', class: 'ax' }, svg, (w > 0 ? '+' : '') + w); }
+  el('text', { x: R, y: B + 32, 'text-anchor': 'end', class: 'ax' }, svg, 'airspeed, km/h');
+  el('text', { x: 12, y: T + 4, class: 'ax' }, svg, 'm/s');
+  // still-air polar (faint), and polar in this air
+  let d0 = '', d1 = '';
+  for (let v = VMIN - 4; v <= VMAX; v += 0.5) { d0 += (d0 ? 'L' : 'M') + X(v) + ' ' + Y(-sink(v)); d1 += (d1 ? 'L' : 'M') + X(v) + ' ' + Y(-sink(v) - s); }
+  if (a !== 0) el('path', { d: d0, fill: 'none', stroke: css('--soft'), 'stroke-dasharray': '4 4', 'stroke-width': 1.2 }, svg);
+  el('path', { d: d1, fill: 'none', stroke: css('--ink'), 'stroke-width': 2.4 }, svg);
+  const v = stf(M, s), w = -sink(v) - s;
+  // tangent line from (0, M) through touch point, extended
+  const x2 = 60, y2 = M + (w - M) * (x2 / v);
+  el('line', { x1: X(0), y1: Y(M), x2: X(x2), y2: Y(Math.max(-4, y2)) , stroke: css('--acc'), 'stroke-width': 2 }, svg);
+  el('circle', { cx: X(0), cy: Y(M), r: 5, fill: css('--acc') }, svg);
+  el('circle', { cx: X(v), cy: Y(w), r: 6, fill: css('--card'), stroke: css('--acc'), 'stroke-width': 3 }, svg);
+  el('line', { x1: X(v), x2: X(v), y1: Y(w) + 8, y2: B, stroke: css('--acc'), 'stroke-dasharray': '3 3' }, svg);
+  el('text', { x: X(0) + 10, y: Y(M) - 8, class: 'ax' }, svg, 'expected climb');
+  el('text', { x: X(v) + 8, y: Y(w) + 22, class: 'ax' }, svg, 'fly ' + v.toFixed(0) + ' km/h');
+  const net = sink(v) + s;
+  const glide = net > 0 ? (v / 3.6 / net) : Infinity;
+  const avg = M > 0 ? v * M / (M + net) : 0; // cross-country speed if the next climb really is M
+  $('pread').innerHTML =
+    `<div><b>${v.toFixed(0)} km/h</b>speed to fly</div>` +
+    `<div><b>${net > 0 ? Math.round(net / v * 3600) + ' m' : 'none'}</b>height lost per km</div>` +
+    `<div><b>${isFinite(glide) ? glide.toFixed(1) + ' : 1' : 'climbing'}</b>glide in this air</div>` +
+    `<div><b>${M > 0 && net > 0 ? avg.toFixed(1) + ' km/h' : '—'}</b>average over the ground, if the next climb really is ${M.toFixed(1)}</div>`;
+}
+$('mc').oninput = drawPolar; $('air').oninput = drawPolar;
+
+// ---------- race ----------
+const SMAP = { weak: 1, fair: 1.6, strong: 2.5 };
+let strength = 'fair', seed = 3, day, pilots, clock = 0, playing = false, fast = false, last = 0;
+const PIL = [
+  { name: 'Patient', col: '--p0', M: 0, geared: false, what: 'takes every thermal' },
+  { name: 'Bold', col: '--p1', M: 2, geared: false, what: 'waits for 2 m/s' },
+  { name: 'Geared', col: '--p2', M: 2, geared: true, what: '2 m/s high, anything low' },
+  { name: 'You', col: '--p3', M: 1.5, geared: true, what: '' },
+];
+function fmt(t) { const m = Math.floor(t / 60); return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); }
+function setup(keepClock) {
+  day = makeDay(seed, SMAP[strength]);
+  PIL[3].M = +$('ym').value; PIL[3].geared = $('yg').checked;
+  PIL[3].what = `waits for ${PIL[3].M} m/s` + (PIL[3].geared ? ', gearing down' : '');
+  $('ymv').textContent = PIL[3].M + ' m/s';
+  pilots = PIL.map(p => ({ ...p, res: fly(day, p, 5) }));
+  if (!keepClock) clock = 0;
+  drawRace(); drawSurvey();
+}
+function stateAt(tr, t) {
+  let i = 0; while (i + 1 < tr.length && tr[i + 1][0] <= t) i++;
+  const a = tr[i], b = tr[i + 1];
+  if (!b) return { x: a[1], h: a[2], k: a[3], v: a[4], done: true, i };
+  const f = (t - a[0]) / (b[0] - a[0] || 1);
+  return { x: a[1] + (b[1] - a[1]) * f, h: a[2] + (b[2] - a[2]) * f, k: a[3], v: a[4], wb: b[4], i, f };
+}
+const cv = $('race'), cx = cv.getContext('2d');
+function drawRace() {
+  const W = cv.clientWidth, H = Math.round(Math.max(260, Math.min(420, W * 0.5)));
+  const dpr = window.devicePixelRatio || 1; cv.style.height = H + 'px';
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, W, H);
+  const L = 10, R = W - 14, T = 26, G = H - 26;
+  const X = x => L + (x / TASK) * (R - L), Y = h => G - (h / BASE) * (G - T);
+  // thermals
+  for (const t of day.th) { if (t.x > TASK) break;
+    const w = 3 + t.w * 4; cx.fillStyle = css('--th'); cx.globalAlpha = 0.12 + Math.min(0.35, t.w * 0.1);
+    cx.fillRect(X(t.x) - w / 2, T, w, G - T); cx.globalAlpha = 1;
+    cx.fillStyle = css('--cloud'); cx.beginPath(); const c = X(t.x), r = 5 + t.w * 2.2;
+    cx.arc(c - r * 0.6, T - 2, r * 0.7, 0, 7); cx.arc(c + r * 0.5, T - 3, r * 0.8, 0, 7); cx.arc(c, T - 7, r * 0.8, 0, 7); cx.fill();
+    cx.fillStyle = css('--soft'); cx.font = '11px "IBM Plex Sans",sans-serif'; cx.textAlign = 'center';
+    if (W > 520 || t.w >= 2) cx.fillText(t.w.toFixed(1), c, G - 8);
+  }
+  // cloudbase
+  cx.strokeStyle = css('--line'); cx.setLineDash([4, 4]); cx.beginPath(); cx.moveTo(L, Y(BASE)); cx.lineTo(R, Y(BASE)); cx.stroke(); cx.setLineDash([]);
+  // ground strip: air
+  for (let k = 0; k < TASK; k++) { const a = day.air[k]; cx.fillStyle = a >= 0 ? css('--lift') : css('--sinkc'); cx.globalAlpha = Math.min(1, Math.abs(a) * 1.6 + 0.08); cx.fillRect(X(k), G, X(k + 1) - X(k) + 0.5, 7); }
+  cx.globalAlpha = 1; cx.fillStyle = css('--ground'); cx.fillRect(L, G + 7, R - L, 4);
+  // goal
+  cx.fillStyle = css('--ink'); cx.fillRect(X(TASK) - 1, T, 2, G - T);
+  cx.font = '12px "IBM Plex Sans",sans-serif'; cx.textAlign = 'right'; cx.fillText('goal 50 km', X(TASK) - 4, G + 22); cx.textAlign = 'left'; cx.fillText('start', L, G + 22);
+  // traces
+  const rows = [];
+  pilots.forEach((p, n) => {
+    const tr = p.res.tr, st = stateAt(tr, clock); const col = css(p.col);
+    cx.strokeStyle = col; cx.lineWidth = n === 3 ? 2.4 : 1.8; cx.globalAlpha = 0.9; cx.beginPath();
+    cx.moveTo(X(tr[0][1]), Y(tr[0][2]));
+    for (let i = 1; i <= st.i; i++) cx.lineTo(X(tr[i][1]), Y(tr[i][2]));
+    cx.lineTo(X(st.x), Y(st.h)); cx.stroke(); cx.globalAlpha = 1;
+    cx.fillStyle = col; cx.beginPath(); cx.arc(X(st.x), Y(st.h), 4.5, 0, 7); cx.fill();
+    if (st.done && p.res.out) { cx.strokeStyle = col; cx.lineWidth = 2.4; const px = X(st.x), py = Y(0) - 6; cx.beginPath(); cx.moveTo(px - 5, py - 5); cx.lineTo(px + 5, py + 5); cx.moveTo(px + 5, py - 5); cx.lineTo(px - 5, py + 5); cx.stroke(); }
+    let s;
+    if (st.done) s = p.res.out ? `landed in a field at ${p.res.x.toFixed(1)} km, ${fmt(p.res.t)} in` : `goal in ${fmt(p.res.t)}, ${p.res.v.toFixed(1)} km/h average`;
+    else if (st.k === 1) s = `climbing at ${st.wb.toFixed(1)} m/s, ${Math.round(st.h)} m`;
+    else s = `gliding at ${Math.round(st.v)} km/h, ${Math.round(st.h)} m, ${st.x.toFixed(1)} km`;
+    rows.push(`<div class="row"><i style="background:${col}"></i><b>${p.name}</b><span>${p.what} · ${s}</span></div>`);
+  });
+  $('board').innerHTML = rows.join('');
+  $('clock').textContent = fmt(clock);
+}
+function endTime() { return Math.max(...pilots.map(p => p.res.t)); }
+function tick(now) {
+  if (!playing) return;
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  clock += dt * (fast ? 1200 : 300);
+  if (clock >= endTime()) { clock = endTime(); playing = false; $('go').textContent = '▶ Fly again'; }
+  drawRace(); if (playing) requestAnimationFrame(tick);
+}
+$('go').onclick = () => { if (playing) { playing = false; $('go').textContent = '▶ Fly'; return; }
+  if (clock >= endTime()) clock = 0; playing = true; $('go').textContent = '❚❚ Pause'; last = performance.now(); requestAnimationFrame(tick); };
+$('fast').onclick = () => { fast = !fast; $('fast').setAttribute('aria-pressed', fast); };
+$('end').onclick = () => { clock = endTime(); playing = false; $('go').textContent = '▶ Fly again'; drawRace(); };
+$('newday').onclick = () => { seed++; playing = false; $('go').textContent = '▶ Fly'; setup(); };
+document.querySelectorAll('#days [data-s]').forEach(b => b.onclick = () => {
+  strength = b.dataset.s; document.querySelectorAll('#days [data-s]').forEach(c => c.setAttribute('aria-pressed', c === b));
+  playing = false; $('go').textContent = '▶ Fly'; setup(); });
+$('ym').oninput = () => setup(true); $('yg').onchange = () => setup(true);
+addEventListener('resize', () => drawRace());
+
+// ---------- survey ----------
+function drawSurvey() {
+  const svg = $('survey'); svg.innerHTML = ''; const d = SURVEY.out[strength];
+  const L = 52, R = 620, T = 16, B = 270;
+  const ymax = { weak: 20, fair: 25, strong: 30 }[strength];
+  const X = m => L + (m / 3) * (R - L), Y = v => B - (v / ymax) * (B - T);
+  for (let v = 0; v <= ymax; v += 5) { el('line', { x1: L, x2: R, y1: Y(v), y2: Y(v), stroke: css('--line') }, svg); el('text', { x: L - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'ax' }, svg, v); }
+  for (let m = 0; m <= 3; m += 0.5) el('text', { x: X(m), y: B + 18, 'text-anchor': 'middle', class: 'ax' }, svg, m);
+  el('text', { x: R, y: B + 36, 'text-anchor': 'end', class: 'ax' }, svg, 'setting: the climb you wait for, m/s');
+  el('text', { x: 6, y: T - 2, class: 'ax' }, svg, 'km/h');
+  const mean = SMAP[strength] * 1.11; // mean of S·e^U(-0.8,0.8)
+  el('line', { x1: X(mean), x2: X(mean), y1: T, y2: B, stroke: css('--soft'), 'stroke-dasharray': '2 4' }, svg);
+  el('text', { x: X(mean) + 5, y: T + 12, class: 'ax' }, svg, 'average thermal');
+  const series = [['trim', '--soft', 'same choices, always at trim speed'], ['plain', '--p1', 'fixed setting'], ['geared', '--p2', 'setting, geared down when low']];
+  for (const [k, c, lab] of series) {
+    const pts = d[k].map(a => X(a[0]) + ' ' + Y(a[1])).join(' L');
+    el('path', { d: 'M' + pts, fill: 'none', stroke: css(c), 'stroke-width': k === 'trim' ? 1.6 : 2.6, 'stroke-dasharray': k === 'trim' ? '5 4' : '' }, svg);
+    const best = d[k].reduce((a, b) => b[1] > a[1] ? b : a);
+    if (k !== 'trim') { el('circle', { cx: X(best[0]), cy: Y(best[1]), r: 5, fill: css(c) }, svg); }
+  }
+  // you
+  const ym = +$('ym').value, yk = $('yg').checked ? 'geared' : 'plain'; const yp = d[yk].find(a => Math.abs(a[0] - ym) < 1e-6);
+  if (yp) { el('circle', { cx: X(yp[0]), cy: Y(yp[1]), r: 7, fill: 'none', stroke: css('--p3'), 'stroke-width': 2.5 }, svg); el('text', { x: X(yp[0]) + 10, y: Y(yp[1]) + 18, class: 'ax', fill: css('--p3') }, svg, 'you'); }
+  $('slegend').innerHTML = series.map(([k, c, lab]) => `<span style="color:${css(c)}">━</span> ${lab}`).join(' &nbsp; ') + ' &nbsp; ● best of each';
+  const bp = d.plain.reduce((a, b) => b[1] > a[1] ? b : a), bg = d.geared.reduce((a, b) => b[1] > a[1] ? b : a), bt = d.trim.reduce((a, b) => b[1] > a[1] ? b : a);
+  const p2 = d.plain.find(a => a[0] === 2), g2 = d.geared.find(a => a[0] === 2);
+  const hm = x => Math.round(x * 100) + '%';
+  $('verdict').innerHTML = `On a ${strength} day the best fixed setting is <b>${bp[0]} m/s</b>, though the average thermal gives ${mean.toFixed(1)}; it makes goal ${hm(bp[2])} of the time at ${bp[1].toFixed(1)} km/h. Flying trim speed instead costs ${(bp[1] - bt[1]).toFixed(1)} km/h. Gearing down gets ${bg[1].toFixed(1)}, and turns the bold 2 m/s setting from ${hm(p2[2])} of days at goal into ${hm(g2[2])}.`;
+}
+
+drawPolar(); setup();
+</script>
+</body>
+</html>

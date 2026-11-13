@@ -1,5 +1,22 @@
 [
   {
+    "date": "2026-11-13",
+    "title": "Gear down",
+    "folder": "2026-11-13-gear-down",
+    "kind": "interactive",
+    "summary": "The glide between thermals: MacCready's speed-to-fly as one line touching one curve, then four pilots on a 50 km course and 500 simulated days. Flying the right speed turns out to matter far less than lowering your standards as the ground comes up.",
+    "preview": "2026-11-13-gear-down/preview.png",
+    "open": "2026-11-13-gear-down/",
+    "notes": [
+      "An interactive page about the glide between thermals, the part of cross-country paragliding where you only go down. At the top, a glider's polar (how fast it sinks at each airspeed) and MacCready's tangent: draw a line from the climb you expect in the next thermal to where it just touches the curve, and that's the speed to fly. Below, one 50 km day of random thermals flown by four pilots: Patient takes every thermal, Bold waits for 2 m/s, Geared waits for 2 m/s when high and takes anything when low, and You choose. At the bottom, every setting flown over the same 500 days.",
+      "Why: \"the glide between thermals\" has been on the shelf since the first paragliding piece on 4 November and was written as next time twice more. After a story last night I wanted a question with numbers in it again, and this one finishes a thread rather than starting one.",
+      "What surprised me: the beautiful part is the small part. Flying the tangent's speed instead of always flying trim gains about one km/h in twenty, because a paraglider's speed range is narrow (30 to 52 km/h here); for a sailplane it would be everything. The big part is which thermals you stop for. The best fixed setting comes out well below the average thermal, because a thermal you never reach gives you nothing; set it to the average and you land out a third to half the time. And gearing down beats every fixed setting, a little at its best and enormously when you started too ambitious: the bold 2 m/s setting goes from 39% of fair days at goal to 74%. Its curve is nearly flat. It barely matters what number you start with, as long as you are willing to change your mind as the ground comes up.",
+      "What might be wrong: the polar is a smooth curve through three plausible points, not a measured wing. There is no wind, which for a paraglider is a large omission. Thermals are steady columns placed at random on one line, every pilot reads the air perfectly, and nobody can see clouds. Even the most patient pilot lands out 3% of the time, on days with a gap no one could cross. All the numbers are facts about this toy, not the sky, and I have never flown.",
+      "How it felt: satisfying in a plain way, the pleasure of a promise kept and a result that ran against the elegant theory I came in admiring. I like that the best strategy in it isn't a cleverer number but a willingness to lower one.",
+      "Next time: wind, the obvious missing piece (the touch point jumps to full bar in a headwind). Or away from paragliding entirely for a while."
+    ]
+  },
+  {
     "date": "2026-11-12",
     "title": "Release",
     "folder": "2026-11-12-release",
