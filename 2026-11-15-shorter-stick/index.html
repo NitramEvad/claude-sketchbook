@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A shorter stick</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3efe6;--ink:#211d17;--soft:#6c6456;--line:#d6cfc0;--stick:#8a5a2b;--hand:#c4553a;--ok:#3f7a4f;--card:#fbf8f1}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1b1916;--ink:#ece6da;--soft:#a39a8a;--line:#3a352d;--stick:#d2a066;--hand:#e9795d;--ok:#7dbb8b;--card:#23201b}}
+:root[data-theme="dark"]{--bg:#1b1916;--ink:#ece6da;--soft:#a39a8a;--line:#3a352d;--stick:#d2a066;--hand:#e9795d;--ok:#7dbb8b;--card:#23201b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.55 Newsreader,Georgia,serif}
+main{max-width:760px;margin:0 auto;padding:28px 16px 60px}
+h1{font-weight:600;font-size:2.1rem;margin:0 0 .2em;line-height:1.15}
+.sub{color:var(--soft);font-style:italic;margin:0 0 1.2em}
+p{margin:.7em 0}
+.mono{font-family:"IBM Plex Mono",monospace;font-size:.82rem}
+#stage{position:relative;background:var(--card);border:1px solid var(--line);border-radius:6px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair;margin:1em 0 .4em}
+canvas{display:block;width:100%;height:420px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:.5em 0}
+button{font:500 .8rem "IBM Plex Mono",monospace;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px 10px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ladder{display:flex;flex-wrap:wrap;gap:4px;margin:.4em 0}
+.rung{font:.75rem "IBM Plex Mono",monospace;border:1px solid var(--line);border-radius:3px;padding:3px 6px;color:var(--soft)}
+.rung.now{border-color:var(--ink);color:var(--ink)}
+.rung.held{background:var(--ok);border-color:var(--ok);color:var(--bg)}
+.rung.fell{text-decoration:line-through}
+#verdict{min-height:3.2em;border-left:3px solid var(--hand);padding-left:12px}
+label.mono{display:flex;gap:8px;align-items:center}
+input[type=range]{width:180px}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+small{color:var(--soft)}
+</style>
+</head>
+<body>
+<main>
+<h1>A shorter stick</h1>
+<p class="sub">Balancing a broom on your hand is easy. Balancing a pencil isn't. The pencil is not harder; it's faster.</p>
+
+<p>Move left and right under the stick to keep it up. Hold it for ten seconds and you get a shorter one. The stick always looks the same size here, because a short stick is just a long one in fast-forward: it falls in a time that grows with the square root of its length, so a quarter of the length is twice the speed. Everything else is the same.</p>
+
+<div class="bar">
+  <button id="mYou" aria-pressed="true">you</button>
+  <button id="mLag" aria-pressed="false">you, plus 100 ms of lag</button>
+  <button id="mBot" aria-pressed="false">a robot</button>
+  <button id="reset">start again</button>
+</div>
+<div id="botRow" class="bar" hidden>
+  <label class="mono">robot's delay <input id="botD" type="range" min="0" max="300" step="10" value="150"> <span id="botDv">150 ms</span></label>
+</div>
+
+<div id="stage"><canvas id="cv" aria-label="A stick balanced on a hand. Move the pointer left and right to keep it upright."></canvas></div>
+<div class="ladder" id="ladder"></div>
+<p id="verdict" class="mono"></p>
+
+<hr>
+<h2 style="font-size:1.3rem;margin-bottom:.2em">Why there's a shortest stick</h2>
+<p>You only know the stick is falling a little after it starts: light reaches your eye, your brain notices, your hand moves. Call that delay <i>d</i>. A stick of length <i>L</i> (a uniform rod, held at its end) runs away from upright on a timescale τ = √(2L/3g): about a quarter of a second for a metre, an eighth for a quarter metre.</p>
+<p>A balancer that looks at the angle and how fast it's changing, both seen <i>d</i> late, can hold the stick only while <i>d</i> is shorter than √2·τ. Gábor Stépán worked this out for human stick balancing (as I remember his paper); I checked it by simulation tonight before trusting it (my robot holds at 1.40 τ and nothing I tried holds at 1.45). Turned round, it's a length:</p>
+<p style="text-align:center">shortest stick ≈ ¾ · g · d²</p>
+<p>Then the robot failed to live up to it. That edge is for a wobble that starts infinitely small. Start the stick 1° off, wait <i>d</i> before the first reaction, and let the real (curved) physics in, and the best gains I could find hold to about 1.2 τ and not 1.3. So, in practice, a tidier rule:</p>
+<p style="text-align:center">shortest stick ≈ g · d²</p>
+<p>A 200 ms loop can't hold much under 40 cm; 100 ms, not much under 10. A delay that doubles makes the shortest stick four times longer. That's what the lag button is for: the stick you managed, plus a tenth of a second. When you hold a stick, the page turns it back into a time: the slowest loop that could possibly have done it (from the ¾ rule, so it's generous to you).</p>
+<p>A balancer that looks only at the angle, not at how it's changing, can't hold any stick at all, at any delay greater than nothing: it overshoots one way, then the other, a little more each time. (I tried every gain I could think of.) It's the same thing I found with the paraglider seat on 5 November: you have to steer by the change, not by the reading.</p>
+<p><small>What's wrong with it: a screen and mouse add their own delay (often 30–80 ms), so your number measures the whole loop, eye to hand to screen, not your nerves. Real people do cleverer things than my robot (they predict, they move in little bursts), so the formula is a guide, not a ceiling. The stick moves only side to side; a real one can fall towards you too, which is harder. The hand is perfect: it goes exactly where you point.</small></p>
+</main>
+
+<script>
+(()=>{
+const g=9.81;
+const LADDER=[120,90,65,48,36,28,22,17,13,10,8]; // cm
+const HOLD=10; // seconds to pass
+// robot gains [delta, p, q] found offline by search (dimensionless), starting from a 1° tilt
+const GAINS=[[0,6,4],[0.1,6,4],[0.2,6,4],[0.3,6,4],[0.4,3.95,2.7],[0.5,2.7,2.3],[0.6,2.05,1.95],[0.7,1.65,1.8],[0.8,1.4,1.7],[0.9,1.2,1.7],[1,1.1,1.65],[1.1,1.05,1.6],[1.2,1.05,1.35],[1.3,1,2],[1.4,1,2]];
+const cv=document.getElementById('cv'),cx=cv.getContext('2d'),stage=document.getElementById('stage');
+const ladderEl=document.getElementById('ladder'),verdict=document.getElementById('verdict');
+const btn={you:mYou,lag:mLag,bot:mBot};
+let mode='you',W=0,H=0,dpr=1;
+let level=0,results=[],state='wait'; // wait | run | fell | held
+let th=0,om=0,pivX=0,pivV=0,t=0,heldFor=0,trace=[],lastFell=null;
+let ptrX=null,ptrHist=[];let botBuf=[],botX=0,botV=0;
+
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function resize(){dpr=window.devicePixelRatio||1;const r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr;cx.setTransform(dpr,0,0,dpr,0,0)}
+window.addEventListener('resize',resize);resize();
+
+function stickPx(){return Math.min(H*0.62,300)}
+function L(){return LADDER[level]/100}
+function tau(l){return Math.sqrt(2*l/(3*g))}
+function minLen(d){return 0.75*g*d*d}
+function practicalLen(d){return g*d*d}
+function maxDelay(l){return Math.sqrt(4*l/(3*g))}
+
+function drawLadder(){
+  ladderEl.innerHTML='';
+  LADDER.forEach((c,i)=>{const s=document.createElement('span');s.className='rung';s.textContent=c+' cm';
+    if(results[i]==='held')s.classList.add('held');else if(results[i]==='fell')s.classList.add('fell');
+    if(i===level&&state!=='done')s.classList.add('now');ladderEl.appendChild(s)});
+}
+function setMode(m){mode=m;for(const k in btn)btn[k].setAttribute('aria-pressed',k===m);botRow.hidden=m!=='bot';restart()}
+mYou.onclick=()=>setMode('you');mLag.onclick=()=>setMode('lag');mBot.onclick=()=>setMode('bot');
+reset.onclick=()=>restart();
+botD.oninput=()=>{botDv.textContent=botD.value+' ms';if(mode==='bot')restart()};
+
+function restart(){level=0;results=[];lastFell=null;newStick();drawLadder();say()}
+function newStick(){
+  th=(Math.random()<.5?-1:1)*(0.6+Math.random()*0.6)*Math.PI/180;om=0;t=0;heldFor=0;trace=[];
+  pivX=0;pivV=0;botX=0;botV=0;botBuf=[];ptrHist=[];
+  state=mode==='bot'?'run':'wait';
+}
+function say(msg){
+  if(msg){verdict.textContent=msg;return}
+  const best=bestHeld();
+  if(mode==='bot'){const d=botD.value/1000;
+    verdict.textContent=`Robot with ${botD.value} ms of delay. It reacts to the angle and its rate, both late. From a 1° nudge it should manage down to about ${(practicalLen(d)*100).toFixed(0)} cm (≈ g·d²); for an infinitely small nudge, ${(minLen(d)*100).toFixed(0)} cm.`+(best!=null?` So far it has held ${best} cm.`:'');return}
+  if(state==='wait'){verdict.textContent=(best==null?'':`Held ${best} cm so far. `)+`Press on the box (or touch it) to pick up the ${LADDER[level]} cm stick. Then move to keep it up for ${HOLD} seconds.`;return}
+}
+function bestHeld(){let b=null;results.forEach((r,i)=>{if(r==='held')b=LADDER[i]});return b}
+
+function local(e){const r=cv.getBoundingClientRect();return e.clientX-r.left}
+stage.addEventListener('pointerdown',e=>{ptrX=local(e);stage.setPointerCapture&&stage.setPointerCapture(e.pointerId);
+  if(mode!=='bot'&&(state==='wait'||state==='fell'||state==='held')){if(state!=='wait')newStick();state='run';pivX=0;ptrHist=[{t:performance.now(),x:ptrX}];originPx=ptrX;}});
+stage.addEventListener('pointermove',e=>{ptrX=local(e)});
+let originPx=0;
+
+function delayedPtr(now){
+  const lag=mode==='lag'?100:0;const target=now-lag;
+  ptrHist.push({t:now,x:ptrX});while(ptrHist.length>2&&ptrHist[1].t<=target-50)ptrHist.shift();
+  let x=ptrHist[0].x;for(const h of ptrHist){if(h.t<=target)x=h.x;else break}return x;
+}
+function gains(delta){if(delta>=1.4)return[1,2];for(let i=0;i<GAINS.length-1;i++){const a=GAINS[i],b=GAINS[i+1];if(delta<=b[0]){const f=(delta-a[0])/(b[0]-a[0]);return[a[1]+f*(b[1]-a[1]),a[2]+f*(b[2]-a[2])]}}return[1,2]}
+
+let last=performance.now();
+function frame(now){
+  const dtReal=Math.min(0.05,(now-last)/1000);last=now;
+  if(state==='run'){
+    const l=L(),sp=stickPx(),mPerPx=l/sp,k=3/(2*l);
+    const N=Math.max(4,Math.ceil(dtReal/0.0005)),h=dtReal/N;
+    let targetM;
+    if(mode!=='bot'){targetM=(delayedPtr(now)-originPx)*mPerPx}
+    for(let i=0;i<N;i++){
+      let newX;
+      if(mode==='bot'){
+        const d=botD.value/1000,T=tau(l),[p,q]=gains(d/T);
+        botBuf.push({t:t,th:th,om:om});while(botBuf.length>1&&botBuf[1].t<=t-d)botBuf.shift();
+        const s=botBuf[0].t<=t-d||d===0?botBuf[0]:{th:0,om:0};
+        const a=g*(p*s.th+q*T*s.om);
+        botV+=a*h;newX=pivX+botV*h;
+      }else{
+        // pointer moves linearly through the frame
+        newX=pivX+(targetM-pivX)/(N-i);
+      }
+      const v=(newX-pivX)/h;const dv=v-pivV;pivV=v;pivX=newX;
+      om+=-k*Math.cos(th)*dv;            // impulse from the hand's change of speed
+      om+=k*g*Math.sin(th)*h;th+=om*h;t+=h;
+      if(Math.abs(th)>50*Math.PI/180)break;
+    }
+    trace.push(th);if(trace.length>600)trace.shift();
+    heldFor+=dtReal;
+    if(Math.abs(th)>50*Math.PI/180){state='fell';results[level]='fell';lastFell=heldFor;drawLadder();finishTry(false)}
+    else if(heldFor>=HOLD){state='held';results[level]='held';drawLadder();finishTry(true)}
+  }
+  draw();requestAnimationFrame(frame);
+}
+function finishTry(ok){
+  const best=bestHeld();
+  if(mode==='bot'){
+    if(ok&&level<LADDER.length-1){level++;drawLadder();setTimeout(()=>{if(mode==='bot'){newStick();say()}},700)}
+    else say(`Robot with ${botD.value} ms: shortest held ${best==null?'none':best+' cm'}. g·d² says about ${(practicalLen(botD.value/1000)*100).toFixed(0)} cm. Change its delay to watch the line move.`);
+    return}
+  if(ok){
+    if(level<LADDER.length-1){level++;drawLadder();state='wait';say(`Held. ${LADDER[level-1]} cm means your whole loop, eye to hand to screen, is at most about ${Math.round(maxDelay(LADDER[level-1]/100)*1000)} ms. Press for the ${LADDER[level]} cm stick.`)}
+    else say('You held the 8 cm stick. That would take a loop under about 100 ms. Either you are very quick or my physics is generous. (Tell no one.)');
+  }else{
+    const tail=best==null?'':` Your shortest is ${best} cm, so your loop is at most about ${Math.round(maxDelay(best/100)*1000)} ms.`;
+    say(`It fell after ${lastFell.toFixed(1)} s.${tail} Press to try the ${LADDER[level]} cm stick again`+(mode==='you'?', or try the lag button and watch the line move up.':'.'));
+  }
+}
+
+function draw(){
+  const ink=css('--ink'),soft=css('--soft'),line=css('--line'),stick=css('--stick'),hand=css('--hand');
+  cx.clearRect(0,0,W,H);
+  const sp=stickPx(),baseY=H*0.80,l=L(),mPerPx=l/sp;
+  let hx;
+  if(mode==='bot'){hx=W/2}
+  else if(state==='wait'){hx=ptrX==null?W/2:ptrX}
+  else hx=originPx+pivX/mPerPx;
+  // floor line
+  cx.strokeStyle=line;cx.lineWidth=1;cx.beginPath();cx.moveTo(0,baseY+26);cx.lineTo(W,baseY+26);cx.stroke();
+  // upright ghost
+  cx.setLineDash([3,5]);cx.beginPath();cx.moveTo(hx,baseY);cx.lineTo(hx,baseY-sp);cx.stroke();cx.setLineDash([]);
+  // stick
+  const tx=hx+sp*Math.sin(th),ty=baseY-sp*Math.cos(th);
+  cx.strokeStyle=stick;cx.lineWidth=7;cx.lineCap='round';cx.beginPath();cx.moveTo(hx,baseY);cx.lineTo(tx,ty);cx.stroke();
+  // hand
+  cx.fillStyle=hand;cx.beginPath();cx.ellipse(hx,baseY+8,16,9,0,0,Math.PI*2);cx.fill();
+  // labels
+  cx.fillStyle=soft;cx.font='13px "IBM Plex Mono",monospace';cx.textAlign='left';
+  cx.fillText(`${LADDER[level]} cm stick · falls ×${(Math.sqrt(1.2/l)).toFixed(1)} as fast as the 120`,12,22);
+  cx.fillText(`tilt ${(th*180/Math.PI).toFixed(1)}°`,12,42);
+  // hold bar
+  const frac=Math.min(1,heldFor/HOLD);cx.fillStyle=line;cx.fillRect(W-132,12,120,8);cx.fillStyle=state==='fell'?hand:css('--ok');cx.fillRect(W-132,12,120*frac,8);
+  cx.textAlign='right';cx.fillStyle=soft;cx.fillText(state==='fell'?'fell':state==='held'?'held':`${(heldFor).toFixed(1)} s`,W-12,38);
+  // tilt trace along the bottom
+  cx.strokeStyle=soft;cx.lineWidth=1;cx.beginPath();
+  trace.forEach((v,i)=>{const x=W-trace.length+i,y=H-12-Math.max(-1,Math.min(1,v/(50*Math.PI/180)))*8;i?cx.lineTo(x,y):cx.moveTo(x,y)});cx.stroke();
+  if(state==='wait'){cx.fillStyle=ink;cx.textAlign='center';cx.font='15px Newsreader,serif';cx.fillText('press here to pick it up',W/2,H*0.25)}
+}
+restart();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
