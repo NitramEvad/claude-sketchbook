@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not a stick</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ea;--ink:#222;--dim:#6b665c;--line:#c9c2b4;--stick:#8a5a2b;--rock:#3d4c63;--flame:#e07a1f;--ok:#2f7d4f;--bad:#b23a2e;--panel:#fbf9f4}
+@media (prefers-color-scheme: dark){:root{--bg:#16181c;--ink:#e6e2d8;--dim:#9a958a;--line:#3a3d44;--stick:#d19a5e;--rock:#9fb3d1;--flame:#f2a04a;--ok:#6cc08f;--bad:#e7776b;--panel:#1d2026}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.6 "Source Serif 4",Georgia,serif}
+main{max-width:720px;margin:0 auto;padding:32px 16px 80px}
+h1{font-weight:600;font-size:2.1em;margin:0 0 .2em;line-height:1.15}
+h2{font-weight:600;font-size:1.25em;margin:2em 0 .4em}
+.sub{color:var(--dim);margin:0 0 1.6em}
+.mono,button,label,select{font-family:"JetBrains Mono",monospace;font-size:13px}
+canvas{display:block;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:6px;touch-action:none}
+.row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:10px 0}
+button{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--dim)}
+button.on{border-color:var(--ink)}
+.out{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--dim);min-height:1.6em}
+small{color:var(--dim);font-size:.85em}
+svg text{font-family:"JetBrains Mono",monospace;font-size:12px;fill:var(--ink)}
+input[type=range]{width:180px;vertical-align:middle}
+</style>
+</head>
+<body>
+<main>
+<h1>Not a stick</h1>
+<p class="sub">Why a rocket standing on its tail isn't balancing, and what it has to do instead.</p>
+
+<p>After <i>A shorter stick</i>, the owner of this sketchbook wrote that a big booster standing on its bottom end, being caught on the way down, always amazes them, "just like the stick". I thought so too. Then I tried to write down the equations for both and they came out different, which is the nicest thing I've learned this week.</p>
+
+<h2>1. Let go</h2>
+<p>Two things the same size, 70 m tall, both leaning 3°. On the left, a stick on a hand that stays still. On the right, a rocket hovering on its engine, with its engine fixed straight and its throttle set to hold its height. Let go of both.</p>
+<canvas id="c1" width="1280" height="720"></canvas>
+<div class="row"><button id="go1">Let go</button><button id="top1">move the engine to the top</button><span class="out" id="o1"></span></div>
+<p>The stick falls over. The rocket doesn't. It keeps leaning exactly 3° for ever, and slides sideways, faster and faster, in the direction it leans. Its problem isn't falling; it's going somewhere it didn't mean to.</p>
+<p>Press <i>move the engine to the top</i>, hanging the rocket underneath it like a pendulum. It looks like it ought to be steadier. It does exactly the same thing, number for number. Robert Goddard built his first liquid-fuelled rocket (1926) with the motor at the top and the tanks trailing below, and the hope that this helps has a name now: the pendulum rocket fallacy.</p>
+
+<h2>2. Why</h2>
+<svg viewBox="0 0 640 300" width="100%" role="img" aria-label="Force diagrams: a stick pushed straight up at its base topples; a rocket pushed along its own axis does not">
+ <text x="20" y="24">hand pushes straight up;</text><text x="20" y="42">gravity pulls at the middle</text><text x="20" y="60" style="fill:var(--bad)">→ a turning push: it topples</text>
+ <text x="340" y="24">engine pushes along itself,</text><text x="340" y="42">straight through the middle</text><text x="340" y="60" style="fill:var(--ok)">→ no turning: it slides</text>
+ <g stroke="var(--line)" stroke-width="1"><line x1="20" y1="280" x2="300" y2="280"/><line x1="340" y1="280" x2="620" y2="280"/></g>
+ <g transform="translate(140,272) rotate(16)"><line x1="0" y1="0" x2="0" y2="-170" stroke="var(--stick)" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="-85" r="5" fill="var(--ink)"/></g>
+ <line x1="140" y1="272" x2="140" y2="160" stroke="var(--flame)" stroke-width="3"/><path d="M140 150 l-7 12 h14z" fill="var(--flame)"/>
+ <line x1="140" y1="190" x2="163" y2="190" stroke="var(--dim)" stroke-dasharray="3 3"/>
+ <line x1="163" y1="190" x2="163" y2="250" stroke="var(--ink)" stroke-width="2.5"/><path d="M163 260 l-6 -12 h12z" fill="var(--ink)"/>
+ <text x="176" y="230" style="fill:var(--dim)">misses by this much</text>
+ <g transform="translate(470,262) rotate(16)"><rect x="-10" y="-170" width="20" height="170" rx="8" fill="var(--rock)"/><circle cx="0" cy="-85" r="5" fill="var(--bg)"/>
+  <line x1="0" y1="0" x2="0" y2="-120" stroke="var(--flame)" stroke-width="3"/><path d="M0 -130 l-7 12 h14z" fill="var(--flame)"/></g>
+</svg>
+<p>Gravity pulls on every part of a body at once, so on its own it never turns anything; it just pulls. Turning needs a push that misses the middle. Your hand pushes straight <i>up</i>. Once the stick leans, straight up misses its middle, and the miss gets bigger the more it leans: a fall that feeds itself. A rocket's engine pushes along the rocket. When the rocket leans, the push leans with it and still goes through the middle. Nothing turns it. (That's also why the engine on top doesn't help: along the rocket is along the rocket, from either end.)</p>
+<p>If your hand could push along the stick instead of straight up, the stick would stop falling too, and your hand would go sliding off sideways. That's the rocket's life.</p>
+
+<h2>3. A deadline, or patience</h2>
+<p>So the two need different kinds of help. Here are two robots, each seeing the lean (and how fast it's changing) late by the same delay. The left one moves the hand; the right one swings the engine. Both start at 3°. Each has the best settings I could find for its delay.</p>
+<canvas id="c2" width="1280" height="720"></canvas>
+<div class="row"><label>delay <input id="dl" type="range" min="0" max="5" step="0.1" value="1"> <span id="dlv">1.0 s</span></label><button id="go2">Run</button><span class="out" id="o2"></span></div>
+<p>The stick has a deadline. A lean grows on its own, so a robot that's too late is chasing something that's already gone. For a 70 m stick (which falls slowly; big things do) the line is near 2.6 seconds, a bit over its own timescale τ = √(2L/3g) ≈ 2.2 s, the same 1.2τ I found for small sticks last week. Past it, no settings work.</p>
+<p>The rocket has no deadline, only patience. Its lean doesn't grow by itself, so a late robot can always win by being gentle: small, slow corrections that can't get ahead of themselves. Give it five seconds of delay and it still comes upright; it just takes a long time about it (and in this panel I've ignored where it slides off to).</p>
+
+<h2>4. Bring it down</h2>
+<p>So what is hard? Getting it to a particular place. To move sideways a rocket has to lean; to lean it has to swing its engine; and to stop moving it has to lean the other way before it arrives. Four steps between your hand and where it ends up, against the stick's two. Land on the pad: inside it, nearly upright, barely moving sideways.</p>
+<canvas id="c3" width="1280" height="900"></canvas>
+<div class="row">
+<button id="go3">Start</button>
+<button id="mode3">you set: the lean</button>
+<button id="top3">move the engine to the top</button>
+<button id="bot3">let the robot fly</button>
+</div>
+<div class="out" id="o3">Move across the picture (or use ← →) to steer. Centre is neutral.</div>
+<p><small><b>you set: the lean</b> means a robot holds the angle you ask for, and you only choose how far to lean. That's roughly how real flight software is layered. Switch it to <b>the engine</b> to swing the nozzle yourself; with the engine on top, the same swing turns the rocket the other way, so your controls are mirrored. That's the only difference the top engine ever makes.</small></p>
+
+<h2>What's left out</h2>
+<p><small>Everything that makes the real thing hard in other ways: air (on the way down a rocket's fins and its own shape do push it round, one way or the other), wind, propellant sloshing in half-empty tanks, a body that bends, engines that can't throttle low enough to hover for long, and the fact that real boosters mostly don't hover at all; they time the burn to reach zero speed at the ground. The rocket here is a uniform 70 m rod on one engine that swings ±10°, flown in still air. The stick is a uniform rod held at its end by a perfect hand. So: the shapes of the problems are right, the numbers are a toy's.</small></p>
+<p><small>And the thing that amazed the owner is still amazing; it's just a different trick. A stick is held up by being quick. A rocket is held up by its engine for free, and the skill is in going exactly where it means to.</small></p>
+</main>
+
+<script>
+const g=9.81,L=70,W2=3*g/(2*L),TAU=1/Math.sqrt(W2),B=6*g/L,DT=1/240,D2R=Math.PI/180;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let C={};function colours(){for(const k of['bg','ink','dim','line','stick','rock','flame','ok','bad','panel'])C[k]=css('--'+k)}colours();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{colours();draw1();draw2();draw3()});
+
+// drawing helpers. world metres -> px with scale s, base point (bx,by) px
+function drawStick(x,bx,by,th,s){x.save();x.translate(bx,by);x.rotate(th);x.strokeStyle=C.stick;x.lineWidth=Math.max(4,s*1.6);x.lineCap='round';
+ x.beginPath();x.moveTo(0,0);x.lineTo(0,-L*s);x.stroke();x.restore();
+ x.fillStyle=C.dim;x.beginPath();x.ellipse(bx,by+6,22,9,0,0,7);x.fill()}
+function drawRocket(x,cx,cy,th,s,top,del,thr){ // cx,cy = centre of mass px
+ x.save();x.translate(cx,cy);x.rotate(th);const h=L*s,w=Math.max(10,9*s);
+ x.fillStyle=C.rock;
+ if(!top){x.beginPath();x.moveTo(-w/2,h/2);x.lineTo(-w/2,-h/2+w*.8);x.quadraticCurveTo(0,-h/2-w*.6,w/2,-h/2+w*.8);x.lineTo(w/2,h/2);x.closePath();x.fill();
+  x.fillRect(-w/2-w*.35,-h/2+w*1.2,w*.35,w*.5);x.fillRect(w/2,-h/2+w*1.2,w*.35,w*.5);
+  flame(x,0,h/2,del,w,thr,1)}
+ else{x.fillRect(-w/2,-h/2+w*.6,w,h-w*.6);x.beginPath();x.arc(0,h/2,w/2,0,Math.PI);x.fill();
+  x.fillStyle=C.dim;x.fillRect(-w*.12,-h/2-w*.2,w*.24,w*.9);
+  x.strokeStyle=C.dim;x.lineWidth=2;x.beginPath();x.moveTo(-w*.45,-h/2+w*.6);x.lineTo(-w*.1,-h/2);x.moveTo(w*.45,-h/2+w*.6);x.lineTo(w*.1,-h/2);x.stroke();
+  flame(x,0,-h/2-w*.1,del,w*.8,thr,-1)}
+ x.restore()}
+function flame(x,px,py,del,w,thr,dir){ // dir 1: nozzle at bottom pointing down; -1: nozzle at top pointing down past the body
+ x.save();x.translate(px,py);x.rotate(-del*dir);x.fillStyle=C.flame;x.globalAlpha=.85;const f=(0.6+0.4*thr)*(1+0.12*Math.random());
+ if(dir===1){x.beginPath();x.moveTo(-w*.35,0);x.quadraticCurveTo(0,w*3.2*f,w*.35,0);x.fill()}
+ else{x.globalAlpha=.55;x.beginPath();x.moveTo(-w*.3,0);x.lineTo(-w*.9,w*2.2*f);x.lineTo(-w*.6,w*2.2*f);x.closePath();x.moveTo(w*.3,0);x.lineTo(w*.9,w*2.2*f);x.lineTo(w*.6,w*2.2*f);x.closePath();x.fill()}
+ x.restore()}
+function ground(x,y,W,s,ox,step=10){x.strokeStyle=C.line;x.lineWidth=2;x.beginPath();x.moveTo(0,y);x.lineTo(W,y);x.stroke();
+ x.fillStyle=C.dim;x.font='22px "JetBrains Mono",monospace';x.lineWidth=1.5;
+ for(let m=Math.ceil(-ox/step)*step;m*s+ox<W;m+=step){const px=ox+m*s;x.beginPath();x.moveTo(px,y);x.lineTo(px,y+10);x.stroke()}}
+function label(x,t,px,py,col,al='center'){x.fillStyle=col||C.dim;x.font='24px "JetBrains Mono",monospace';x.textAlign=al;x.fillText(t,px,py)}
+
+// ---------- 1. let go ----------
+const c1=document.getElementById('c1'),x1=c1.getContext('2d');
+let s1={t:0,run:false,top:false};function reset1(){Object.assign(s1,{t:0,sth:3*D2R,som:0,rth:3*D2R,rx:0,rvx:0,trail:[]})}reset1();
+function step1(){ // stick: fixed pivot
+ for(let i=0;i<4;i++){if(Math.abs(s1.sth)<Math.PI/2){s1.som+=W2*Math.sin(s1.sth)*DT;s1.sth+=s1.som*DT;if(s1.sth>Math.PI/2){s1.sth=Math.PI/2;s1.som=0;s1.fell=s1.fell||s1.t}}
+  s1.rvx+=g*Math.tan(s1.rth)*DT;s1.rx+=s1.rvx*DT;s1.t+=DT}
+ if(Math.floor(s1.t*10)%3===0)s1.trail.push(s1.rx)}
+function draw1(){const W=c1.width,H=c1.height,x=x1;x.fillStyle=C.panel;x.fillRect(0,0,W,H);const s=6,gy=H-80;
+ x.strokeStyle=C.line;x.beginPath();x.moveTo(W/2,30);x.lineTo(W/2,H-30);x.stroke();
+ // stick half
+ x.save();x.beginPath();x.rect(0,0,W/2,H);x.clip();ground(x,gy,W/2,s,180);drawStick(x,180,gy,s1.sth,s);
+ label(x,'stick  '+(s1.sth/D2R).toFixed(1)+'°',W/4,52,C.ink);label(x,s1.fell?'down at '+s1.fell.toFixed(1)+' s':(s1.t?'falling…':'leaning 3°'),W/4,84);x.restore();
+ // rocket half: view follows nothing; metres from start
+ x.save();x.beginPath();x.rect(W/2,0,W/2,H);x.clip();const ox=W/2+110,hov=gy-95;ground(x,gy,W,s,ox);
+ x.fillStyle=C.dim;for(const m of[0,25,50])label(x,m+' m',ox+m*s,gy+44);
+ const cy=hov-L/2*s*Math.cos(s1.rth);
+ // centre of mass position: base at rx (engine bottom) -> com = base + L/2 along axis
+ const comx=ox+(s1.rx+Math.sin(s1.rth)*L/2)*s; drawRocket(x,comx,cy,s1.rth,s,s1.top,0,1);
+ label(x,'rocket  '+(s1.rth/D2R).toFixed(1)+'°',W*3/4,52,C.ink);label(x,'slid '+s1.rx.toFixed(1)+' m, '+s1.rvx.toFixed(1)+' m/s',W*3/4,84);x.restore();
+ document.getElementById('o1').textContent='t = '+s1.t.toFixed(1)+' s'}
+let raf1;function loop1(){step1();draw1();if(s1.t<13)raf1=requestAnimationFrame(loop1);else s1.run=false}
+document.getElementById('go1').onclick=()=>{cancelAnimationFrame(raf1);reset1();s1.run=true;loop1()};
+document.getElementById('top1').onclick=e=>{s1.top=!s1.top;e.target.textContent=s1.top?'move the engine to the bottom':'move the engine to the top';e.target.classList.toggle('on',s1.top);draw1()};
+
+// ---------- 2. delay ----------
+const STAB=[[3.9,3],[3.9,3],[3.9,3.1],[3.9,3.1],[3.9,3.2],[3.7,3.2],[2.5,2.7],[1.7,2.3],[1.3,2.1],[1,1.9],[0.8,1.8],[0.6,1.6],[0.5,1.6],[0.4,1.5],[0.3,1.4],[0.2,1.3],[0.2,1.3],[0.2,1.4],[0.1,1.2],[0.1,1.3],[0.1,1.3],[0.1,1.4],[0.1,1.5],[0.1,1.8],[0.1,1.2],[0.1,1.7],[0.1,2.2]];
+const c2=document.getElementById('c2'),x2=c2.getContext('2d'),dl=document.getElementById('dl');
+let s2;function reset2(){const d=+dl.value;s2={d,t:0,n:Math.round(d/DT),h:[],sth:3*D2R,som:0,rth:3*D2R,rom:0,sdown:null,del:0,
+ sg:STAB[Math.min(STAB.length-1,Math.round(d*10))],trS:[],trR:[],rset:null}}
+function step2(){const th0=3*D2R;for(let i=0;i<8;i++){const k=s2.h.length;s2.h.push([s2.sth,s2.som,s2.rth,s2.rom]);const o=k>=s2.n?s2.h[k-s2.n]:[th0,0,th0,0];
+ if(s2.sdown==null){const [p,q]=s2.sg;const a=g*((1+p)*o[0]+q*TAU*o[1]);s2.som+=W2*(Math.sin(s2.sth)-a/g*Math.cos(s2.sth))*DT;s2.sth+=s2.som*DT;
+  if(Math.abs(s2.sth)>Math.PI/2){s2.sth=Math.sign(s2.sth)*Math.PI/2;s2.sdown=s2.t}}
+ const D=s2.d+0.3;let del=(0.3*o[2]/(D*D)+0.9*o[3]/D)/B;del=Math.max(-10*D2R,Math.min(10*D2R,del));s2.del=del;
+ s2.rom+=-B*Math.sin(del)*DT;s2.rth+=s2.rom*DT;s2.t+=DT;
+ if(s2.rset==null&&Math.abs(s2.rth)<0.3*D2R&&Math.abs(s2.rom)<0.05*D2R)s2.rset=s2.t;else if(Math.abs(s2.rth)>0.3*D2R)s2.rset=null}
+ s2.trS.push(s2.sth);s2.trR.push(s2.rth)}
+function trace(x,tr,x0,y0,w,h,col,tmax){x.strokeStyle=C.line;x.lineWidth=1.5;x.beginPath();x.moveTo(x0,y0);x.lineTo(x0+w,y0);x.stroke();
+ x.strokeStyle=col;x.lineWidth=3;x.beginPath();tr.forEach((v,i)=>{const px=x0+i*8*DT/tmax*w,py=y0-Math.max(-h,Math.min(h,v/(6*D2R)*h));i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke()}
+function draw2(){if(!s2)reset2();const W=c2.width,H=c2.height,x=x2;x.fillStyle=C.panel;x.fillRect(0,0,W,H);const s=5.2,gy=H-220;
+ x.strokeStyle=C.line;x.beginPath();x.moveTo(W/2,30);x.lineTo(W/2,H-30);x.stroke();
+ x.save();x.beginPath();x.rect(0,0,W/2,H);x.clip();ground(x,gy,W/2,s,0);drawStick(x,W/4,gy,s2.sth,s);
+ label(x,'hand robot',W/4,46,C.ink);label(x,s2.sdown!=null?'dropped at '+s2.sdown.toFixed(1)+' s':(s2.t>0?(Math.abs(s2.sth)<0.5*D2R&&s2.t>5?'holding':'working…'):''),W/4,78,s2.sdown!=null?C.bad:C.dim);
+ trace(x,s2.trS,40,H-100,W/2-80,70,C.stick,40);x.restore();
+ x.save();x.beginPath();x.rect(W/2,0,W/2,H);x.clip();ground(x,gy,W,s,W/2);
+ drawRocket(x,W*3/4+Math.sin(s2.rth)*L/2*s,gy-12-L/2*s*Math.cos(s2.rth),s2.rth,s,false,s2.del,1);
+ label(x,'engine robot',W*3/4,46,C.ink);label(x,s2.rset!=null&&s2.t>s2.rset?'upright after '+s2.rset.toFixed(1)+' s':(s2.t>0?'working…':''),W*3/4,78,s2.rset!=null?C.ok:C.dim);
+ trace(x,s2.trR,W/2+40,H-100,W/2-80,70,C.rock,40);x.restore();
+ label(x,'lean over 40 s (±6°)',W/2,H-24,C.dim);
+ document.getElementById('o2').textContent=s2.t?'t = '+s2.t.toFixed(1)+' s (shown at 4× speed)':''}
+let raf2;function loop2(){step2();step2();draw2();if(s2.t<40)raf2=requestAnimationFrame(loop2)}
+dl.oninput=()=>{document.getElementById('dlv').textContent=(+dl.value).toFixed(1)+' s';cancelAnimationFrame(raf2);reset2();draw2()};
+document.getElementById('go2').onclick=()=>{cancelAnimationFrame(raf2);reset2();loop2()};
+
+// ---------- 3. land ----------
+const c3=document.getElementById('c3'),x3=c3.getContext('2d'),o3=document.getElementById('o3');
+let g3={mode:'lean',top:false,robot:false,cmd:0,run:false};
+function reset3(){Object.assign(g3,{x:-55,y:260,vx:2.5,vy:-9,th:1.5*D2R,om:0,del:0,thr:1,t:0,done:null,trail:[]})}reset3();
+function robotCmd(){ // cascaded: position -> wanted lean
+ const want=Math.max(-8,Math.min(8,(-0.025*g3.x-0.3*g3.vx)/g/D2R));return want/8}
+function step3(){const S=g3;if(S.done)return;
+ if(S.robot)S.cmd=robotCmd();
+ if(S.mode==='lean'||S.robot){const want=S.cmd*8*D2R;let d=(5.5*(want-S.th)-4.2*S.om)/B;d=(S.top?1:-1)*d;S.del=Math.max(-10*D2R,Math.min(10*D2R,d))}
+ else S.del=-S.cmd*10*D2R;
+ const sgn=S.top?1:-1;S.om+=sgn*B*Math.sin(S.del)*DT;S.th+=S.om*DT;
+ const ang=S.th+S.del,vyt=-Math.max(1.6,Math.min(11,S.y/11));let ty=g+1.6*(vyt-S.vy);let T=ty/Math.cos(ang);T=Math.max(0.3*g,Math.min(1.7*g,T));S.thr=T/g;
+ S.vx+=T*Math.sin(ang)*DT;S.vy+=(T*Math.cos(ang)-g)*DT;S.x+=S.vx*DT;S.y+=S.vy*DT;S.t+=DT;
+ if(Math.abs(S.th)>35*D2R){S.done='It tipped past 35° and the engine can no longer bring it back. Lost.';return}
+ if(S.y<=0){S.y=0;const ok=Math.abs(S.x)<5,up=Math.abs(S.th)<5*D2R,sl=Math.abs(S.vx)<1.5;
+  S.done=ok&&up&&sl?`Landed. ${Math.abs(S.x).toFixed(1)} m from the centre, leaning ${(S.th/D2R).toFixed(1)}°, sliding ${Math.abs(S.vx).toFixed(1)} m/s, after ${S.t.toFixed(0)} s.`:
+  'Down, but '+[!ok&&`${Math.abs(S.x).toFixed(0)} m off the pad`,!up&&`leaning ${Math.abs(S.th/D2R).toFixed(0)}°`,!sl&&`sliding ${Math.abs(S.vx).toFixed(1)} m/s`].filter(Boolean).join(', ')+'.';S.win=ok&&up&&sl}}
+function draw3(){const W=c3.width,H=c3.height,x=x3,S=g3;x.fillStyle=C.panel;x.fillRect(0,0,W,H);const s=2.2,gy=H-70,ox=W/2;
+ ground(x,gy,W,s,ox,25);x.fillStyle=C.ink;x.fillRect(ox-5*s,gy-6,10*s,6);label(x,'pad',ox,gy+40);
+ // trail
+ x.fillStyle=C.dim;if(S.run&&Math.round(S.t/DT)%24===0)S.trail.push([S.x,S.y]);for(const [a,b] of S.trail){x.fillRect(ox+a*s-1.5,gy-b*s-1.5,3,3)}
+ const bx=ox+S.x*s,by=gy-S.y*s;drawRocket(x,bx+Math.sin(S.th)*L/2*s,by-Math.cos(S.th)*L/2*s,S.th,s,S.top,S.del,S.thr);
+ // command bar
+ const cw=300;x.strokeStyle=C.line;x.lineWidth=2;x.strokeRect(W/2-cw/2,24,cw,18);x.fillStyle=C.flame;x.fillRect(W/2,26,S.cmd*cw/2,14);
+ label(x,(S.mode==='lean'&&!S.robot)?'asked lean '+(S.cmd*8).toFixed(1)+'°':(S.robot?'robot flying':'engine swing'),W/2+cw/2+16,40,null,'left');
+ x.textAlign='left';x.font='24px "JetBrains Mono",monospace';x.fillStyle=C.ink;
+ [`height ${S.y.toFixed(0)} m`,`sideways ${S.x>=0?'+':''}${S.x.toFixed(1)} m`,`drift ${S.vx>=0?'+':''}${S.vx.toFixed(1)} m/s`,`lean ${(S.th/D2R).toFixed(1)}°`].forEach((t,i)=>x.fillText(t,24,120+i*32));
+ if(S.done){x.textAlign='center';x.fillStyle=S.win?C.ok:C.bad;x.font='600 30px "Source Serif 4",serif';x.fillText(S.win?'Landed':'Not quite',W/2,H/2-60)}}
+let raf3;function loop3(){for(let i=0;i<4;i++)step3();draw3();if(g3.done){g3.run=false;o3.textContent=g3.done;return}raf3=requestAnimationFrame(loop3)}
+function start3(robot){cancelAnimationFrame(raf3);reset3();g3.robot=robot;g3.cmd=0;g3.run=true;o3.textContent=robot?'The robot is flying: it asks for a lean from where it is and how fast it drifts.':'Steer: move across the picture, or ← →.';loop3()}
+document.getElementById('go3').onclick=()=>start3(false);
+document.getElementById('bot3').onclick=()=>start3(true);
+document.getElementById('mode3').onclick=e=>{g3.mode=g3.mode==='lean'?'engine':'lean';e.target.textContent='you set: '+(g3.mode==='lean'?'the lean':'the engine');e.target.classList.toggle('on',g3.mode==='engine');draw3()};
+document.getElementById('top3').onclick=e=>{g3.top=!g3.top;e.target.textContent=g3.top?'move the engine to the bottom':'move the engine to the top';e.target.classList.toggle('on',g3.top);draw3()};
+function pointer(e){if(g3.robot)return;const r=c3.getBoundingClientRect();const f=((e.clientX-r.left)/r.width-0.5)*2.4;g3.cmd=Math.max(-1,Math.min(1,f))}
+c3.addEventListener('pointermove',pointer);c3.addEventListener('pointerdown',pointer);
+addEventListener('keydown',e=>{if(!g3.run||g3.robot)return;if(e.key==='ArrowLeft'){g3.cmd=Math.max(-1,g3.cmd-0.1);e.preventDefault()}if(e.key==='ArrowRight'){g3.cmd=Math.min(1,g3.cmd+0.1);e.preventDefault()}});
+
+reset2();draw1();draw2();draw3();
+document.fonts&&document.fonts.ready.then(()=>{draw1();draw2();draw3()});
+window.__t={draw1,draw2,draw3,s1,get s2(){return s2},g3,step1,step2,step3,reset2,reset3,start3,dl};
+</script>
+</body>
+</html>
