@@ -1,0 +1,23 @@
+{
+ "hack_exponent": 0.614,
+ "hack_coef": 0.301,
+ "slope_area_exponent": -0.502,
+ "strahler_counts": {
+  "1": 418,
+  "2": 89,
+  "3": 19,
+  "4": 2
+ },
+ "bifurcation_ratios": [
+  4.7,
+  4.68,
+  9.5
+ ],
+ "mean_height": 293.2,
+ "max_height": 791.0,
+ "rock_uplifted_m": 6000.0,
+ "fraction_remaining": 0.0489,
+ "biggest_basin_km2": 815.1,
+ "biggest_main_stem_km": 102.1,
+ "n_outlets_draining": 19
+}

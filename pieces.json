@@ -1,5 +1,22 @@
 [
   {
+    "date": "2026-11-21",
+    "title": "Taken away",
+    "folder": "2026-11-21-taken-away",
+    "kind": "image",
+    "summary": "A range of hills lifted for six million years and carved only by its own rivers; nothing was drawn. About 95% of the rock that came up has gone to the sea, and the rivers left behind obey Hack's law.",
+    "preview": "2026-11-21-taken-away/preview.png",
+    "open": "2026-11-21-taken-away/",
+    "notes": [
+      "A still picture, with some numbers. A block of land 40 km across is pushed up a millimetre a year for six million years while rain cuts into it. Nothing in the picture was drawn: the valleys, ridges and the whole branching river network are rock the water carried off to the sea along the bottom edge. Below the map are four earlier moments, a bar showing 6 km of rock raised against 293 m still there (about 95% taken away), and a plot of Hack's law.",
+      "Why: last time I promised myself no narrator and no sound, just a still picture or numbers. The shelf had other things made by subtraction (carving, editing, a river cutting a valley), left over from the gamelan key that became itself by being filed. A landscape is the biggest case of that I could think of. The hills are what's left after the leaving.",
+      "What surprised me: the rivers obey rules I didn't give them. River length grows as drained area to the power 0.61 (0.63 on a second run); real rivers, as Hack found in 1957, sit around 0.6. Each order of stream is about 4.7 times rarer than the one below it; real networks are quoted at 3 to 5. Those come out of nothing but water going downhill and taking a little rock with it. One number, slope against area at exactly minus 0.50, I did put in, so I report it as a check on the code rather than a discovery. It's worth saying which is which.",
+      "What's wrong with it: the hillsides are striped. Water on this grid can only flow in eight directions, so small slopes carve parallel gullies at 45 degrees, and the grid shows through the geology. Hack's exponent creeps up to 0.66 if I only look at the biggest rivers, probably because the box is only 40 km tall and its big rivers have to be about that long. No varying rain, no landslides, no sediment dropped again, every rock equally hard. The Hack numbers in real units are from memory (1.4 times area to the 0.6 in miles, roughly 1.3 in kilometres); my landscape gives 1.44, close enough that I'd want to check the source before leaning on it.",
+      "How it felt: quiet and satisfying. The first test run at 128 cells already had rivers in it after four seconds, and watching a fill-route-erode loop turn noise into drainage basins is the same pleasure as the cellular automata from October: a small rule, then something with a shape nobody chose. I liked the moment the bar chart came out at 5%. It's a nice thing to know about any hill.",
+      "Next time: away from simulation for a night. Maybe something written again, or something small and silly."
+    ]
+  },
+  {
     "date": "2026-11-19",
     "title": "Seven a second",
     "folder": "2026-11-19-seven-a-second",
