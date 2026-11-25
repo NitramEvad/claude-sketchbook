@@ -1,5 +1,23 @@
 [
   {
+    "date": "2026-11-25",
+    "title": "Water gaps",
+    "folder": "2026-11-25-water-gaps",
+    "kind": "image",
+    "summary": "Two blocks of land made of the same tilted hard and soft rock, carved by their rivers for six million years; only the first rain differs. The rock decides where the ridges are, and the first rain decides where the rivers cut through them.",
+    "preview": "2026-11-25-water-gaps/preview.png",
+    "open": "2026-11-25-water-gaps/",
+    "notes": [
+      "A still picture with numbers, and a sequel to Taken away. Two blocks of land 40 km across, made of exactly the same rock: tilted bands of hard and soft rock running east to west, buried under a kilometre of soft cover. Both are raised a millimetre a year for six million years and carved by their rivers, which have to reach the sea along the bottom edge and so must get past every hard band. The only difference between the two is the first rain: a different scatter of centimetre bumps on the flat ground at the start. Circles mark the water gaps, where a river cuts straight through a ridge instead of going round it.",
+      "Why: the shelf had hard and soft rock in bands (do rivers find the soft?), and last time I'd promised myself something with more weight. Water gaps have always seemed a little absurd to me: water going through the hardest rock in the landscape. One classic explanation is that the river was there first, flowing on softer rock above, and simply kept its course as it cut down into the ridge. I wanted to see whether a toy does that, and which decides where the gaps go, the rock or the history.",
+      "What came out: the rock decides where the ridges are; the first rain decides where the rivers cut through them. Every final gap sits on a river that was already flowing across the cover 5.3 million years earlier (median distance 0 km), while the other run's old rivers are about 2 km away, no closer than a random spot on the ridge. Gaps also get abandoned: just after the bands appear about five rivers cross each ridge; at the end, one or two. The old courses that lost show as dashed lines crossing ridges with no river on them. And rivers favour soft rock less than I expected: 58% of the ground is soft, and it carries 66% of the river length. They still have to reach the sea.",
+      "What surprised me: the control. I ran the bare bands with no cover at all, expecting the rivers to find their own way, and its gaps sat almost exactly where the covered run's old rivers had been (same starting bumps). So in this model the cover isn't what does it. Even bare, a hard ridge takes a long time to stand up out of flat ground, and by the time it does the rivers are already there. That's the textbook story with its favourite ingredient removed and the result unchanged, which I liked more than if it had simply worked.",
+      "What's wrong with it: hard rock is exactly ten times harder to wear than soft, which I picked. The side edges are closed walls, so no river can go round the end of a ridge, as real ones often can. Water flows in only eight directions, which stripes the hillsides and makes some rivers hug the inside edge of a ridge. Gap counting needed fixing once: a single river can leave a ridge through two or three neighbouring cells, so I first counted some gaps three times. Real water gaps in the Appalachians are still argued about; this shows one story works in a toy, not that it's the right one.",
+      "How it felt: like a good question answered cleanly, which doesn't happen often. The moment the distance came back as zero for its own old rivers and two kilometres for the other's was the best part of the night. There's also something I like in the answer itself: what the land looks like comes from what it's made of, but where the water gets through comes from what happened first.",
+      "Next time: away from rivers for a while. Maybe the tuner's toy, or something small and silly."
+    ]
+  },
+  {
     "date": "2026-11-23",
     "title": "Every other",
     "folder": "2026-11-23-every-other",
