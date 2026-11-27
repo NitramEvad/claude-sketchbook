@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>File to seven</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#efe8da; --ink:#26231e; --grey:#7d776c; --rule:rgba(60,50,40,.2); --a:#a8652a; --b:#4f6f7a; --bronze:#b07a3a; --bronze2:#8a5a26; --dust:#c49352; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#1d1a16; --ink:#e8e3d8; --grey:#9c968a; --rule:rgba(230,220,200,.2); --a:#e0a060; --b:#88adb8; --bronze:#c08a48; --bronze2:#93632e; --dust:#d4a466; }
+  }
+  :root[data-theme="dark"] { --bg:#1d1a16; --ink:#e8e3d8; --grey:#9c968a; --rule:rgba(230,220,200,.2); --a:#e0a060; --b:#88adb8; --bronze:#c08a48; --bronze2:#93632e; --dust:#d4a466; }
+  html, body { background:var(--bg); }
+  body { margin:0; padding:3.5rem 16px 6rem; font-family:'Newsreader', Georgia, serif; color:var(--ink); }
+  main { max-width:36rem; margin:0 auto; font-size:1.1rem; line-height:1.6; }
+  h1 { font-weight:400; font-size:3rem; margin:0; letter-spacing:-.01em; }
+  .sub { color:var(--grey); font-style:italic; margin:.3rem 0 2rem; }
+  .task { font-size:1.35rem; margin:2rem 0 .4rem; }
+  .task b { font-weight:500; color:var(--a); }
+  svg#keys { width:100%; height:auto; display:block; margin:.5rem 0 0; }
+  .row { display:flex; flex-wrap:wrap; gap:.5rem; margin:.7rem 0; align-items:center; }
+  .row .lab { font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--grey); min-width:4.2rem; }
+  button { font:inherit; font-size:.95rem; color:var(--ink); background:none; border:1px solid var(--rule); border-radius:99px;
+           padding:.3em .95em; cursor:pointer; }
+  button:hover, button:focus-visible { border-color:var(--a); outline:none; }
+  button.file { color:var(--a); }
+  button.main { border-color:var(--a); color:var(--a); }
+  button:disabled { opacity:.35; cursor:default; border-color:var(--rule); }
+  label.chk { font-size:.9rem; color:var(--grey); display:flex; gap:.4em; align-items:center; cursor:pointer; }
+  .stats { color:var(--grey); font-size:.9rem; font-variant-numeric:tabular-nums; margin:.3rem 0 0; }
+  #look { width:100%; height:70px; display:none; margin:.5rem 0 0; }
+  #verdict { min-height:1.6em; margin:1.4rem 0 0; padding:.9rem 0 0; border-top:1px solid var(--rule); }
+  #verdict .num { color:var(--grey); font-size:.92rem; font-variant-numeric:tabular-nums; }
+  #log { display:flex; flex-wrap:wrap; gap:.4rem; margin:1rem 0 0; font-size:.85rem; color:var(--grey); font-variant-numeric:tabular-nums; }
+  #log span { border:1px solid var(--rule); border-radius:4px; padding:.05em .5em; }
+  #log span.good { border-color:var(--a); color:var(--a); }
+  .end { margin-top:3.5rem; padding-top:1rem; border-top:1px solid var(--rule); color:var(--grey); font-size:.92rem; }
+  .end p { margin:.6rem 0; }
+  kbd { font:inherit; font-size:.85em; border:1px solid var(--rule); border-radius:3px; padding:0 .3em; }
+</style>
+</head>
+<body>
+<main>
+<h1>File to seven</h1>
+<p class="sub">You are the tuner. The twin key is finished. Yours has just come from the forge. The old tuner is listening.</p>
+
+<p>Struck together, the two keys should swell and fade a set number of times a second, and yours should be the higher of the pair. Bronze can only be taken away: file the <em>ends</em> and the key rises; thin the <em>middle</em> and it sinks. Each stroke is a little different, so you can't count your way there. Listen, file, listen again. Hand it over when you think it's right.</p>
+
+<p class="task" id="task">Tune to <b>seven</b> a second.</p>
+
+<svg id="keys" viewBox="0 0 560 210" role="img" aria-label="The two keys: the finished twin above, yours below, with filings underneath"></svg>
+
+<div class="row"><span class="lab">Strike</span>
+  <button id="both" class="main">both</button>
+  <button id="mine">yours</button>
+  <button id="twin">the twin</button>
+  <button id="ref">what seven sounds like</button>
+</div>
+<div class="row"><span class="lab">File</span>
+  <button id="ends" class="file">the ends ↑</button>
+  <button id="middle" class="file">the middle ↓</button>
+  <label class="chk"><input type="checkbox" id="light"> light strokes</label>
+</div>
+<div class="row"><span class="lab">Then</span>
+  <button id="done">hand it over</button>
+  <button id="next" disabled>another key</button>
+  <label class="chk"><input type="checkbox" id="peek"> let me look as well</label>
+</div>
+<canvas id="look" aria-hidden="true"></canvas>
+<p class="stats" id="stats"></p>
+
+<div id="verdict" aria-live="polite"></div>
+<div id="log"></div>
+
+<div class="end">
+<p>Keys: <kbd>space</kbd> strikes both, <kbd>↑</kbd> files the ends, <kbd>↓</kbd> thins the middle, <kbd>shift</kbd> for a light stroke.</p>
+<p>A sequel to <em>Tuned apart</em> and <em>Seven a second</em>, from the tuner's side. The sound is a sketch of bronze (three partials of a free bar and a tap), not a recording. Thinning the middle also nudges the key's upper ring a little sharp against its fundamental, so a key mostly tuned down from far above can come out with a faint second shimmer in the high partial. That is true of bars in general; how much it matters for a gamelan key, and whether a tuner listens for it, I don't know.</p>
+<p>“Let me look” draws how loud the pair is for two seconds after a strike. A key tuned that way is marked “by eye” in the row of keys.</p>
+</div>
+</main>
+
+<script>
+const WORDS = {5:'five',6:'six',7:'seven',8:'eight'};
+const TWIN = 622;                // the finished key, Hz
+let ctx = null;
+let key;                          // the key being filed
+const log = [];
+
+function rnd(a, b) { return a + Math.random() * (b - a); }
+
+function newKey() {
+  const target = log.length === 0 ? 7 : [5,6,7,8][Math.floor(Math.random()*4)];
+  // fresh from the forge: somewhere between well flat and a little sharp of where it should be
+  let off;
+  do { off = rnd(-16, 9); } while (Math.abs(off - target) < 2.5);
+  key = { target, f: TWIN + off, up: 0, down: 0, grams: 0, strokes: 0, looked: false, done: false, cracked: false };
+  document.getElementById('task').innerHTML = `Tune to <b>${WORDS[target]}</b> a second.`;
+  document.getElementById('ref').textContent = `what ${WORDS[target]} sounds like`;
+  document.getElementById('verdict').innerHTML = '';
+  document.getElementById('next').disabled = true;
+  ['ends','middle','done'].forEach(id => document.getElementById(id).disabled = false);
+  key.looked = document.getElementById('peek').checked;
+  draw(); stats(); drawLook();
+}
+
+// upper partial: thinning the middle lowers the fundamental more than the second mode
+function ratio(k) { return 2.76 + 0.0012 * k.down - 0.0002 * k.up; }
+
+function file(where, light) {
+  if (key.done) return;
+  const big = !light;
+  let df, g;
+  if (where === 'ends') { df = big ? rnd(0.4, 1.5) : rnd(0.07, 0.3); g = big ? rnd(.5,.8) : rnd(.1,.2); key.up += df; }
+  else                  { df = -(big ? rnd(0.5, 1.7) : rnd(0.08, 0.35)); g = big ? rnd(.8,1.2) : rnd(.15,.3); key.down += -df; }
+  key.f += df; key.grams += g; key.strokes++;
+  rasp(where === 'ends', light);
+  if (key.down > 34) { key.cracked = true; finish(); }
+  else if (key.up > 40) { key.short = true; finish(); }
+  draw(); stats();
+}
+
+// ---------- sound ----------
+function ac() {
+  ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+  return ctx;
+}
+function bar(c, out, t, f, r) {
+  [[1, 1, 3.2], [r, .28, .8], [5.40 * r / 2.76, .1, .25]].forEach(([m, a, d]) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.frequency.value = f * m; o.type = 'sine';
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(a, t + .004);
+    g.gain.exponentialRampToValueAtTime(.0001, t + d * 1.6);
+    o.connect(g).connect(out); o.start(t); o.stop(t + d * 1.6 + .05);
+  });
+  const n = c.createBuffer(1, Math.floor(c.sampleRate * .03), c.sampleRate), ch = n.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.exp(-i / (c.sampleRate * .004));
+  const s = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = n; bp.type = 'bandpass'; bp.frequency.value = 2600; g.gain.value = .25;
+  s.connect(bp).connect(g).connect(out); s.start(t);
+}
+function strike(which, c = ac(), t0) {
+  const t = t0 ?? c.currentTime + 0.03, out = c.createGain();
+  out.gain.value = 0.2; out.connect(c.destination);
+  if (which === 'both' || which === 'twin') bar(c, out, t, TWIN, 2.76);
+  if (which === 'both' || which === 'mine') bar(c, out, t, key.f, ratio(key));
+  if (which === 'ref') { bar(c, out, t, TWIN, 2.76); bar(c, out, t, TWIN + key.target, 2.76); }
+  if (which === 'both') drawLook();
+}
+// the rasp of a file: a few strokes of filtered noise
+function rasp(ends, light) {
+  const c = ac(), t = c.currentTime + .01, dur = light ? .12 : .32;
+  const n = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate), ch = n.getChannelData(0);
+  const teeth = ends ? 180 : 120;
+  for (let i = 0; i < ch.length; i++) {
+    const x = i / c.sampleRate, env = Math.sin(Math.PI * x / dur);
+    ch[i] = (Math.random() * 2 - 1) * env * (0.55 + 0.45 * Math.sign(Math.sin(2 * Math.PI * teeth * x)));
+  }
+  const s = c.createBufferSource(), hp = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = n; hp.type = 'bandpass'; hp.frequency.value = ends ? 4200 : 3000; hp.Q.value = .8; g.gain.value = light ? .12 : .2;
+  s.connect(hp).connect(g).connect(c.destination); s.start(t);
+}
+
+// ---------- drawing ----------
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+const NS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, parent) { const e = document.createElementNS(NS, name); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+function keyShape(cx, y, len, under, h) {
+  // a bar with a scooped underside; under = depth of the scoop
+  const x0 = cx - len / 2, x1 = cx + len / 2, a = x0 + len * .22, b = x1 - len * .22;
+  return `M${x0},${y} L${x1},${y} L${x1},${y + h} L${b},${y + h} Q${cx},${y + h - 2 * under} ${a},${y + h} L${x0},${y + h} Z`;
+}
+// dust is seeded per key so it doesn't jump around on every redraw
+let dust = [];
+function draw() {
+  const svg = document.getElementById('keys'); svg.innerHTML = '';
+  const cx = 280, L0 = 430, H = 34;
+  const ink = css('--grey');
+  el('text', {x: 34, y: 22, fill: ink, 'font-size': 13, 'font-family': 'Newsreader, Georgia, serif', 'font-style': 'italic'}, svg).textContent = 'the twin';
+  el('path', {d: keyShape(cx, 30, L0 - 18, 6, H), fill: css('--bronze2')}, svg);
+  el('text', {x: 34, y: 100, fill: ink, 'font-size': 13, 'font-family': 'Newsreader, Georgia, serif', 'font-style': 'italic'}, svg).textContent = 'yours';
+  // shown exaggerated: a real key changes by a fraction of a millimetre a stroke
+  const len = L0 - 2.2 * key.up, under = 2 + 0.75 * key.down;
+  el('path', {d: keyShape(cx, 108, len, Math.min(under, H / 2 - 1), H), fill: key.cracked ? css('--grey') : css('--bronze')}, svg);
+  if (key.cracked) el('path', {d: `M${cx - 4},108 l6,9 l-5,8 l7,${H - 17}`, stroke: css('--bg'), 'stroke-width': 2.2, fill: 'none'}, svg);
+  // the cord holes
+  [[cx - (L0 - 18) * .28, 47], [cx + (L0 - 18) * .28, 47], [cx - len * .28, 125], [cx + len * .28, 125]].forEach(([x, y]) =>
+    el('circle', {cx: x, cy: y, r: 3.2, fill: css('--bg')}, svg));
+  // filings on the floor: one grain for every 0.05 g
+  const want = Math.floor(key.grams * 20);
+  while (dust.length < want) {
+    const fromEnds = Math.random() < key.up / Math.max(key.up + key.down, 1e-9);
+    const side = Math.random() < .5 ? -1 : 1;
+    const x = fromEnds ? cx + side * (len / 2 + rnd(-8, 10)) : cx + rnd(-55, 55);
+    dust.push([x + rnd(-6, 6) * Math.random(), Math.random()]);
+  }
+  const floor = 200;
+  // stack the grains into little heaps
+  const cols = {};
+  dust.forEach(([x, r]) => {
+    const k = Math.round(x / 3); cols[k] = (cols[k] || 0) + 1;
+    el('circle', {cx: k * 3 + r - .5, cy: floor - cols[k] * 1.6, r: 1.1, fill: css('--dust')}, svg);
+  });
+  el('line', {x1: 20, x2: 540, y1: floor + 1.5, y2: floor + 1.5, stroke: css('--rule')}, svg);
+}
+function stats() {
+  const s = key.strokes;
+  document.getElementById('stats').textContent =
+    `${s} stroke${s === 1 ? '' : 's'} · ${key.grams.toFixed(1)} g of bronze on the floor`;
+}
+function drawLook() {
+  const cv = document.getElementById('look'), on = document.getElementById('peek').checked;
+  cv.style.display = on ? 'block' : 'none';
+  if (!on) return;
+  key.looked = true;
+  const w = cv.clientWidth, h = 70, dpr = window.devicePixelRatio || 1;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const g = cv.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, h);
+  g.fillStyle = css('--a'); g.globalAlpha = .8;
+  const beat = key.f - TWIN;
+  g.beginPath(); g.moveTo(0, h / 2);
+  const pts = [];
+  for (let x = 0; x <= w; x++) {
+    const t = 2 * x / w, amp = Math.abs(Math.cos(Math.PI * beat * t)) * Math.exp(-t / 1.4);
+    pts.push([x, amp * (h / 2 - 2)]);
+  }
+  pts.forEach(([x, a]) => g.lineTo(x, h / 2 - a));
+  for (let i = pts.length - 1; i >= 0; i--) g.lineTo(pts[i][0], h / 2 + pts[i][1]);
+  g.fill();
+}
+
+// ---------- the verdict ----------
+function finish() {
+  key.done = true;
+  ['ends','middle','done'].forEach(id => document.getElementById(id).disabled = true);
+  document.getElementById('next').disabled = false;
+  const beat = key.f - TWIN, err = Math.abs(beat) - key.target;
+  // up top the pair should beat 2.76 times as fast as below; anything more is the middle's doing
+  const upper = key.f * (ratio(key) - 2.76);
+  let say, good = false;
+  if (key.cracked) say = 'Too much from the middle: it cracked. That one goes back to be melted and poured again.';
+  else if (key.short) say = 'Too much from the ends. It no longer fits the frame. Back to the forge.';
+  else if (Math.abs(beat) < 1.5) say = 'Almost no shimmer. They nearly agree, and on their own they sound flat and still. He shakes his head.';
+  else if (beat < 0) say = 'The shimmer is there, but your key sits under its twin; it was meant to be the higher one. It will need the ends filed until it passes the twin and comes out the other side.';
+  else if (Math.abs(err) <= 0.5) { good = true; say = 'He nods.'; }
+  else if (Math.abs(err) <= 1.2) say = err > 0 ? 'Close. A touch too fast: one light stroke at the middle, he says.' : 'Close. A touch too slow: one light stroke at the ends, he says.';
+  else say = err > 0 ? 'Too quick. It sounds nervous.' : 'Too slow. It sounds lazy.';
+  if (good && upper > 3) say += ` Then he listens again, to the top of the sound, and frowns a little. Up there the two keys sit ${upper.toFixed(1)} Hz further apart than they should: too much taken from the middle.`;
+  const sign = beat >= 0 ? '' : '−';
+  document.getElementById('verdict').innerHTML =
+    `<p>${say}</p><p class="num">The pair beat ${sign}${Math.abs(beat).toFixed(2)} times a second (asked for ${key.target}) · ${key.strokes} strokes · ${key.grams.toFixed(1)} g filed away${key.looked ? ' · by eye' : ''}</p>`;
+  log.push({target: key.target, beat, good, looked: key.looked, broke: key.cracked || key.short});
+  const lg = document.getElementById('log'); lg.innerHTML = '';
+  log.forEach(k => {
+    const s = document.createElement('span');
+    s.textContent = k.broke ? `${k.target}: remelted` : `${k.target}: ${k.beat.toFixed(1)}${k.looked ? ' (eye)' : ''}`;
+    if (k.good) s.className = 'good';
+    lg.appendChild(s);
+  });
+}
+
+// ---------- wiring ----------
+const $ = id => document.getElementById(id);
+$('both').onclick = () => strike('both');
+$('mine').onclick = () => strike('mine');
+$('twin').onclick = () => strike('twin');
+$('ref').onclick  = () => strike('ref');
+$('ends').onclick   = e => file('ends', $('light').checked || e.shiftKey);
+$('middle').onclick = e => file('middle', $('light').checked || e.shiftKey);
+$('done').onclick = finish;
+$('next').onclick = () => { dust = []; newKey(); };
+$('peek').onchange = drawLook;
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === ' ') { e.preventDefault(); strike('both'); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); file('ends', $('light').checked || e.shiftKey); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); file('middle', $('light').checked || e.shiftKey); }
+});
+window.addEventListener('resize', drawLook);
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { draw(); drawLook(); });
+newKey();
+</script>
+</body>
+</html>
